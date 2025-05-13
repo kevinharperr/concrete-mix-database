@@ -22,7 +22,53 @@
     <div class="alert alert-info">
         <i class="fas fa-info-circle"></i> Viewing the improved CDB database with standardized material naming.
     </div>
-    <hr>
+    
+    <!-- Main navigation tabs -->
+    <ul class="nav nav-tabs mt-3" id="mixTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
+                <i class="fas fa-info-circle"></i> Details
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="visualizations-tab" data-bs-toggle="tab" data-bs-target="#visualizations" type="button" role="tab" aria-controls="visualizations" aria-selected="false">
+                <i class="fas fa-chart-bar"></i> Visualizations
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content" id="mixTabsContent">
+        <!-- Details Tab Pane -->
+        <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+            <div class="mt-3">
+    
+    <!-- Mix Summary Section -->
+    <div class="row mb-4" id="mixSummary">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Mix Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h6>Total Material</h6>
+                            <p class="h3" id="totalMaterial">-</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Cement Content</h6>
+                            <p class="h3" id="cementContent">-</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Water Content</h6>
+                            <p class="h3" id="waterContent">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Basic Mix Information -->
     <div class="row mb-4">
@@ -90,8 +136,8 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mt-3">
-                        <canvas id="mixProportionsChart" width="400" height="250"></canvas>
+                    <div class="mt-3" style="height: 250px;">
+                        <canvas id="mixProportionsChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -219,8 +265,8 @@
                         </div>
                     </div>
                     <div class="tab-pane fade" id="strength" role="tabpanel" aria-labelledby="strength-tab">
-                        <div id="strengthChartContainer">
-                            <canvas id="strengthChart" width="400" height="250"></canvas>
+                        <div id="strengthChartContainer" style="height: 300px;">
+                            <canvas id="strengthChart"></canvas>
                         </div>
                     </div>
                     <div class="tab-pane fade" id="durability" role="tabpanel" aria-labelledby="durability-tab">
@@ -241,67 +287,127 @@
             <i class="fas fa-arrow-left"></i> Back to Mixes List
         </a>
     </div>
-</div>
-{% endblock %}
+            </div><!-- End of mt-3 -->
+        </div><!-- End of details tab pane -->
+        
+        <!-- Visualizations Tab Pane -->
+        <div class="tab-pane fade" id="visualizations" role="tabpanel" aria-labelledby="visualizations-tab">
+            <div class="row mt-4">
+                <!-- Material Composition Section -->
+                <div class="col-12 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Material Composition</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="text-center">Material Proportions by Category</h5>
+                                    <div style="height: 400px;">
+                                        <canvas id="materialProportionsChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="text-center">Material Distribution</h5>
+                                    <div style="height: 400px;">
+                                        <canvas id="materialPieChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Strength Development Section -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-line"></i> Strength Development</h5>
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 350px;">
+                                <canvas id="strengthDevelopmentChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Metrics Section -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-tachometer-alt"></i> Performance Metrics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 350px;">
+                                <canvas id="performanceRadarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sustainability Dashboard Section -->
+                {% if sustainability_metrics %}
+                <div class="col-12 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-leaf"></i> Sustainability Metrics</h5>
+                        </div>
+                        <div class="card-body" style="height: 350px;">
+                            <div id="sustainabilityDashboard" style="height: 100%; max-width: 100%; overflow: hidden;"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div><!-- End of tab content -->
+</div><!-- End of container -->
+{% endblock content %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/enhanced_charts.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Materials proportions chart
+        // Enhanced materials proportions charts
         {% if components %}
         const materialLabels = [{% for comp in components %}"{{ comp.material.specific_name }}",{% endfor %}];
         const materialData = [{% for comp in components %}{{ comp.dosage_kg_m3|default:0 }},{% endfor %}];
+        const materialClasses = [{% for comp in components %}"{{ comp.material.material_class.class_code }}",{% endfor %}];
         
-        const proportionsCtx = document.getElementById('mixProportionsChart');
-        new Chart(proportionsCtx, {
-            type: 'bar',
-            data: {
-                labels: materialLabels,
-                datasets: [{
-                    label: 'Dosage (kg/m³)',
-                    data: materialData,
-                    backgroundColor: [
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(153, 102, 255, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(153, 102, 255, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Dosage (kg/m³)'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    title: {
-                        display: true,
-                        text: 'Material Proportions'
-                    }
+        // Calculate total dosage
+        const totalDosage = materialData.reduce((sum, val) => sum + val, 0);
+        
+        // Create enhanced stacked bar chart in the visualizations tab
+        createEnhancedMaterialProportionsChart('materialProportionsChart', materialLabels, materialData, materialClasses);
+        
+        // Create material distribution pie chart in the visualizations tab
+        createMaterialDistributionPieChart('materialPieChart', materialLabels, materialData, materialClasses);
+        
+        // Add summary card in the details tab
+        const mixSummaryElement = document.getElementById('mixSummary');
+        if (mixSummaryElement) {
+            // Calculate cement and water content
+            let cementContent = 0;
+            let waterContent = 0;
+            
+            materialClasses.forEach((classCode, index) => {
+                if (classCode === 'CEMENT') {
+                    cementContent += materialData[index];
+                } else if (classCode === 'WATER') {
+                    waterContent += materialData[index];
                 }
-            }
-        });
+            });
+            
+            // Update the summary details
+            document.getElementById('totalMaterial').innerHTML = `${totalDosage.toFixed(1)} <small>kg/m³</small>`;
+            document.getElementById('cementContent').innerHTML = `${cementContent.toFixed(1)} <small>kg/m³</small>`;
+            document.getElementById('waterContent').innerHTML = `${waterContent.toFixed(1)} <small>kg/m³</small>`;
+        }
         {% endif %}
         
-        // Strength development chart
+        // Enhanced strength development chart
         {% if performance_results %}
         // Pre-process strength results data
         const strengthData = [
@@ -320,59 +426,94 @@
             {% endfor %}
         ];
         
-        
         if (strengthLabels.length > 0) {
-            // Sort strength data by age (days)
-            // Create an array of objects to help with sorting
-            const strengthPairs = strengthLabels.map((label, index) => {
-                return { age: label, value: strengthData[index] };
-            });
-            
-            // Sort by age
-            strengthPairs.sort((a, b) => a.age - b.age);
-            
-            // Extract sorted labels and data
-            const sortedLabels = strengthPairs.map(pair => pair.age);
-            const sortedData = strengthPairs.map(pair => pair.value);
-            
-            const strengthCtx = document.getElementById('strengthChart');
-            new Chart(strengthCtx, {
-                type: 'line',
-                data: {
-                    labels: sortedLabels,
-                    datasets: [{
-                        label: 'Strength Development',
-                        data: sortedData,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1,
-                        fill: false
-                    }]
-                },
-                options: {
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Age (days)'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Compressive Strength (MPa)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Strength Development Over Time'
-                        }
-                    }
-                }
-            });
+            // Create enhanced strength chart with prediction model
+            // Pass target strength if available
+            const targetStrength = {{ mix.target_strength_mpa|default:'null' }};
+            createEnhancedStrengthChart('strengthChart', strengthLabels, strengthData, targetStrength);
         }
+        
+        // Performance radar chart setup
+        const performanceCategories = {};
+        {% for result in performance_results %}
+            {% if result.category and result.value_num %}
+                // Group similar categories together and take the average at 28 days where available
+                if ('{{ result.age_days }}' === '28' || !performanceCategories['{{ result.category }}']) {
+                    performanceCategories['{{ result.category }}'] = {{ result.value_num|default:0 }};
+                }
+            {% endif %}
+        {% endfor %}
+        
+        // Only create radar chart if we have enough different categories
+        if (Object.keys(performanceCategories).length >= 3) {
+            // Create canvas for radar chart
+            const radarContainer = document.createElement('div');
+            radarContainer.className = 'tab-pane fade';
+            radarContainer.id = 'performance-radar';
+            radarContainer.setAttribute('role', 'tabpanel');
+            radarContainer.setAttribute('aria-labelledby', 'radar-tab');
+            radarContainer.style.height = '300px';
+            
+            const radarCanvas = document.createElement('canvas');
+            radarCanvas.id = 'performanceRadarChart';
+            radarContainer.appendChild(radarCanvas);
+            
+            // Add the tab button
+            const radarTab = document.createElement('li');
+            radarTab.className = 'nav-item';
+            radarTab.innerHTML = `
+                <button class="nav-link" id="radar-tab" data-bs-toggle="tab" data-bs-target="#performance-radar" 
+                   type="button" role="tab" aria-controls="performance-radar" aria-selected="false">
+                    <i class="fas fa-radar"></i> Performance Radar
+                </button>
+            `;
+            
+            // Add tab and container to the document
+            document.querySelector('.nav-tabs').appendChild(radarTab);
+            document.querySelector('.tab-content').appendChild(radarContainer);
+            
+            // Create the radar chart
+            createPerformanceRadarChart('performanceRadarChart', performanceCategories);
+        }
+        {% endif %}
+        
+        // Setup sustainability dashboard if data is available
+        {% if sustainability_metrics %}
+        const sustainabilityData = {
+            gwp: 0,
+            energy: 0,
+            water: 0
+        };
+        
+        {% for metric in sustainability_metrics %}
+            {% if 'carbon' in metric.metric_type|lower or 'co2' in metric.metric_type|lower or 'gwp' in metric.metric_type|lower %}
+                sustainabilityData.gwp += {{ metric.value|default:0 }};
+            {% elif 'energy' in metric.metric_type|lower %}
+                sustainabilityData.energy += {{ metric.value|default:0 }};
+            {% elif 'water' in metric.metric_type|lower %}
+                sustainabilityData.water += {{ metric.value|default:0 }};
+            {% endif %}
+        {% endfor %}
+        
+        // Create container for the sustainability dashboard
+        const sustainabilityContainer = document.createElement('div');
+        sustainabilityContainer.className = 'card mt-4';
+        sustainabilityContainer.innerHTML = `
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-leaf"></i> Sustainability Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div id="sustainabilityDashboard" style="height: 300px; max-width: 100%; overflow: hidden;"></div>
+            </div>
+        `;
+        
+        document.querySelector('.container').insertBefore(
+            sustainabilityContainer, 
+            document.querySelector('.mb-4:last-of-type')
+        );
+        
+        // Create the sustainability dashboard
+        createSustainabilityDashboard('sustainabilityDashboard', sustainabilityData);
         {% endif %}
     });
 </script>

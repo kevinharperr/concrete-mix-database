@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.2] - 2025-05-13
+
+### Added
+- Added dedicated Visualizations tab in the mix detail page
+- Implemented enhanced material composition charts (bar chart and pie chart)
+- Added strength development visualization
+- Added performance metrics radar chart
+- Created sustainability metrics dashboard
+- Added mix summary section with key metrics (total material, cement content, water content)
+
+### Improved
+- Improved layout for visualizations with proper sizing and responsive containers
+- Enhanced user experience with tabbed interface separating mix details from visualizations
+- Fixed chart sizing issues to prevent layout overflow
+
 ## [1.0.1] - 2025-05-13
 
 ### Fixed
