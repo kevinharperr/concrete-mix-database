@@ -176,22 +176,55 @@ Follow these steps to set up the project locally:
 *   Updated all templates to extend `cdb_base.html` instead of `base.html`.
 *   Updated branding throughout to "Concrete Mix Database" instead of "CDB - Concrete Database".
 
-## Future Enhancements Roadmap
+## PhD Research Priorities and Development Roadmap
 
-### Version 2:
+### Near-Term TODOs (Focus on Analysis with Existing Data):
 
-*   Advanced data visualization (ternary diagrams, complex charts).
-*   Standard compliance checking (ACI, EN, etc.).
-*   Sustainability insights dashboards.
-*   Data sharing and collaboration features.
-*   Project-based access controls.
-*   Refined user roles and permissions.
-*   Improved UI/UX for forms (e.g., searchable selectors).
-*   Bulk data import functionality.
+1. **Strength Classification System (EN & ASTM Standards)**
+   * Add concrete strength class fields (C20/25, C25/30, etc. for EN; 3000psi, 4000psi, etc. for ASTM)
+   * Implement automatic classification based on 28-day strength results
+   * Create filtered views by strength class
 
-### Version 3:
+2. **Data Completeness Assessment**
+   * Add completeness indicators for each mix record (basic/complete)
+   * Implement data validation rules for critical parameters
+   * Flag mixes with missing essential components (cement, water)
 
-*   Predictive models for strength prediction.
-*   API access for external tools.
-*   Advanced machine learning integration.
+3. **Basic Parameter Correlation Analysis**
+   * Create scatter plot visualizations for key relationships:
+     - Water-cement ratio vs. strength
+     - Cement content vs. strength
+     - Supplementary material proportions vs. strength
+   * Add statistical correlation indicators (R²)
+
+4. **Clinker Reduction Analysis**
+   * Add clinker factor calculation field
+   * Create visualization comparing clinker factor to strength development
+   * Implement clinker replacement ratio metrics
+
+5. **Mix Composition Comparison Tool**
+   * Implement side-by-side comparison view for multiple mixes
+   * Add normalized comparison metrics (per m³, per MPa)
+   * Create visual highlighting of key differences between compositions
+
+6. **Performance Data Export**
+   * Add CSV/Excel export with complete mix data
+   * Create customizable export templates for research analysis
+   * Implement batch export for statistical processing
+
+### Medium-Term Features (Version 2):
+
+*   Advanced data visualization (ternary diagrams, complex charts)
+*   Standard compliance checking (ACI, EN, etc.)
+*   Sustainability insights dashboard (when metrics become available)
+*   Data sharing and collaboration features
+*   Improved UI/UX for forms (e.g., searchable selectors)
+*   Bulk data import functionality
+
+### Long-Term Features (Version 3):
+
+*   Predictive models for strength, workability, and durability
+*   Performance optimization tools for low-carbon mix design
+*   Advanced machine learning integration
+*   Comprehensive sustainability assessment
 
