@@ -114,7 +114,7 @@
                             <tr>
                                 <th>Material</th>
                                 <th>Type</th>
-                                <th>Dosage (kg/mu00b3)</th>
+                                <th>Dosage (kg/m³)</th>
                                 <th>Dosage (% of binder)</th>
                                 <th>Actions</th>
                             </tr>
@@ -256,7 +256,7 @@
             data: {
                 labels: [{% for comp in components %}"{{ comp.material.specific_name }}",{% endfor %}],
                 datasets: [{
-                    label: 'Dosage (kg/mu00b3)',
+                    label: 'Dosage (kg/m³)',
                     data: [{% for comp in components %}{{ comp.dosage_kg_m3|default:0 }},{% endfor %}],
                     backgroundColor: [
                         'rgba(75, 192, 192, 0.2)',
@@ -281,7 +281,7 @@
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Dosage (kg/mu00b3)'
+                            text: 'Dosage (kg/m³)'
                         }
                     }
                 },
