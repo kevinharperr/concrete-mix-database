@@ -201,8 +201,8 @@
                                         <tr>
                                             <td>{{ result.category }}</td>
                                             <td>{{ result.test_method.description|default:"Not specified" }}</td>
-                                            <td>{{ result.test_age_days|default_if_none:"-" }}</td>
-                                            <td>{{ result.test_value }}</td>
+                                            <td>{{ result.age_days|default_if_none:"-" }}</td>
+                                            <td>{{ result.value_num }}</td>
                                             <td>{{ result.unit.unit_symbol|default:"" }}</td>
                                             <td>
                                                 <a href="{% url 'cdb_app:edit_performance_result' mix_pk=mix.pk perf_pk=result.pk %}" class="btn btn-sm btn-primary">
@@ -248,16 +248,19 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Materials chart
+        // Materials proportions chart
         {% if components %}
+        const materialLabels = [{% for comp in components %}"{{ comp.material.specific_name }}",{% endfor %}];
+        const materialData = [{% for comp in components %}{{ comp.dosage_kg_m3|default:0 }},{% endfor %}];
+        
         const proportionsCtx = document.getElementById('mixProportionsChart');
         new Chart(proportionsCtx, {
             type: 'bar',
             data: {
-                labels: [{% for comp in components %}"{{ comp.material.specific_name }}",{% endfor %}],
+                labels: materialLabels,
                 datasets: [{
                     label: 'Dosage (kg/m³)',
-                    data: [{% for comp in components %}{{ comp.dosage_kg_m3|default:0 }},{% endfor %}],
+                    data: materialData,
                     backgroundColor: [
                         'rgba(75, 192, 192, 0.2)',
                         'rgba(54, 162, 235, 0.2)',
@@ -300,30 +303,46 @@
         
         // Strength development chart
         {% if performance_results %}
-        const strengthResults = [
+        // Pre-process strength results data
+        const strengthData = [
             {% for result in performance_results %}
-                {% if 'strength' in result.category|lower and result.test_age_days %}
-                    {
-                        age: {{ result.test_age_days }},
-                        value: {{ result.test_value }},
-                        method: "{{ result.test_method.description|default:'Unknown' }}"
-                    },
+                {% if 'strength' in result.category|lower and result.age_days %}
+                    {{ result.value_num|default:0 }}{% if not forloop.last %},{% endif %}
                 {% endif %}
             {% endfor %}
         ];
         
-        if (strengthResults.length > 0) {
+        const strengthLabels = [
+            {% for result in performance_results %}
+                {% if 'strength' in result.category|lower and result.age_days %}
+                    {{ result.age_days|default:0 }}{% if not forloop.last %},{% endif %}
+                {% endif %}
+            {% endfor %}
+        ];
+        
+        
+        if (strengthLabels.length > 0) {
+            // Sort strength data by age (days)
+            // Create an array of objects to help with sorting
+            const strengthPairs = strengthLabels.map((label, index) => {
+                return { age: label, value: strengthData[index] };
+            });
+            
             // Sort by age
-            strengthResults.sort((a, b) => a.age - b.age);
+            strengthPairs.sort((a, b) => a.age - b.age);
+            
+            // Extract sorted labels and data
+            const sortedLabels = strengthPairs.map(pair => pair.age);
+            const sortedData = strengthPairs.map(pair => pair.value);
             
             const strengthCtx = document.getElementById('strengthChart');
             new Chart(strengthCtx, {
                 type: 'line',
                 data: {
-                    labels: strengthResults.map(result => result.age),
+                    labels: sortedLabels,
                     datasets: [{
                         label: 'Strength Development',
-                        data: strengthResults.map(result => result.value),
+                        data: sortedData,
                         borderColor: 'rgba(75, 192, 192, 1)',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         tension: 0.1,

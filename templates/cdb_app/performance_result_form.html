@@ -72,8 +72,8 @@
                                 <tr>
                                     <td>{{ result.category }}</td>
                                     <td>{{ result.test_method.description|default:"Not specified" }}</td>
-                                    <td>{{ result.test_age_days|default_if_none:"-" }}</td>
-                                    <td>{{ result.test_value }}</td>
+                                    <td>{{ result.age_days|default_if_none:"-" }}</td>
+                                    <td>{{ result.value_num }}</td>
                                     <td>{{ result.unit.unit_symbol|default:"" }}</td>
                                 </tr>
                             {% endfor %}

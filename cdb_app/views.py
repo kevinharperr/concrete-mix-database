@@ -19,7 +19,7 @@ from .forms import (
 )
 
 from django.db.models import (
-    Count, Prefetch, Max, OuterRef, Subquery, F, Value, CharField, BigIntegerField,
+    Count, Avg, Prefetch, Max, OuterRef, Subquery, F, Value, CharField, BigIntegerField,
     ExpressionWrapper
 )
 # Using RawSQL for natural sorting (matching functionality from original app)
@@ -689,7 +689,7 @@ def dataset_detail(request, pk):
     
     # Get statistics
     total_mixes = mixes.count()
-    total_materials = Material.objects.using('cdb').filter(mixcomponent__mix__dataset=dataset).distinct().count()
+    total_materials = Material.objects.using('cdb').filter(mix_usages__mix__dataset=dataset).distinct().count()
     total_results = PerformanceResult.objects.using('cdb').filter(mix__dataset=dataset).count()
     
     # Get average compressive strength if available
@@ -697,7 +697,7 @@ def dataset_detail(request, pk):
         mix__dataset=dataset, 
         category__icontains='strength'
     )
-    strength_avg = strength_results.aggregate(avg_strength=Avg('test_value'))['avg_strength']
+    strength_avg = strength_results.aggregate(avg_strength=Avg('value_num'))['avg_strength']
     
     # Pagination for mixes
     paginator = Paginator(mixes, 10)  # 10 mixes per page

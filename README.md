@@ -1,8 +1,8 @@
-# Concrete Mix Database Web Application (Version 1 Prototype)
+# Concrete Mix Database Web Application
 
 ## Project Overview
 
-This project is a Version 1 prototype of a web application designed to manage and explore data from a PostgreSQL database containing information about concrete materials, mix compositions, performance test results, and sustainability metrics. It provides functionalities for viewing, adding, searching, and filtering concrete mix data, with a focus on usability and data integrity.
+This web application is designed to manage and explore data from a PostgreSQL database containing information about concrete materials, mix compositions, performance test results, and sustainability metrics. It provides functionalities for viewing, adding, searching, and filtering concrete mix data, with a focus on usability and data integrity. The application has been consolidated into a single "cdb_app" structure for improved maintainability.
 
 ## Technology Stack
 
@@ -84,17 +84,19 @@ Follow these steps to set up the project locally:
 
 *   **System:** PostgreSQL
 *   **Database Name:** `concrete_mix_db`
-*   **Core Tables (Managed Externally):**
-    *   `bibliographicreference`: Source documents (papers, reports).
-    *   `chemicalcomposition`: Chemical makeup of materials.
-    *   `concretemix`: Core mix design information.
-    *   `datasetversion`: Metadata about data import batches.
-    *   `durabilityresult`: Results from durability tests (e.g., chloride permeability).
-    *   `material`: Details about raw materials (cement, aggregates, admixtures).
-    *   `materialproperty`: Physical properties of materials (density, absorption).
-    *   `mixcomposition`: Links materials to a specific `Concretemix` with quantities.
-    *   `performanceresult`: Results from performance tests (compressive strength, slump).
-    *   `specimen`: Details about the test specimens used.
+*   **Core Tables:**
+    *   `bibliographic_reference`: Source documents (papers, reports).
+    *   `material`: Core material information.
+    *   `material_property`: Properties of materials.
+    *   `material_class`: High-level material classifications (e.g., "cement", "SCM").
+    *   `concrete_mix`: Core mix design information.
+    *   `mix_component`: Links materials to concrete mixes with dosage information.
+    *   `performance_result`: Results from performance tests (e.g., compressive strength).
+    *   `sustainability_metric`: Environmental impact values (e.g., CO2 emissions, energy use).
+    *   `dataset`: Information about source datasets.
+    *   `specimen`: Test specimen details.
+    *   `test_method`: Test methods used for performance results.
+    *   `unit_lookup`: Units and conversion factors.
     *   `sustainabilitymetrics`: Environmental impact data for mixes.
 *   **Django Model Management:** The Django models corresponding to the tables above have `class Meta: managed = False`. This means Django will *not* create, modify, or delete these tables during migrations. They are assumed to exist and be managed externally (e.g., via pgAdmin or separate scripts). Django *will* manage tables for its own apps (auth, admin, sessions) and third-party apps (`allauth`).
 *   **Primary Key Sequences:** If you encounter `IntegrityError` related to duplicate primary keys (e.g., `material_id`, `mix_id`) when adding data through the web application after manual database operations, the PostgreSQL sequence generators might be out of sync. You can reset them using `setval` in pgAdmin:
@@ -112,21 +114,22 @@ Follow these steps to set up the project locally:
     *   `settings.py`: Project configuration (database, apps, static files, etc.).
     *   `urls.py`: Project-level URL routing.
     *   `wsgi.py`/`asgi.py`: Server gateway interfaces.
-*   `concrete_mix_app/`: The core application for concrete data.
-    *   `models.py`: Defines Django models mirroring the database tables.
+*   `cdb_app/`: The core application for concrete mix database.
+    *   `models.py`: Defines Django models reflecting the refined database schema.
     *   `views.py`: Contains the logic for handling requests and rendering pages.
     *   `urls.py`: App-specific URL routing.
     *   `forms.py`: Defines forms for data entry and validation.
     *   `filters.py`: Defines filters for the search functionality using `django-filter`.
     *   `admin.py`: Configures how models are displayed in the Django admin site.
     *   `templatetags/`: Contains custom template tags (e.g., `url_params.py`).
+    *   `api_views.py`: REST API endpoints for the application.
 *   `templates/`: Project-level HTML templates.
-    *   `base.html`: The main site layout template.
+    *   `cdb_base.html`: The main site layout template.
     *   `includes/`: Reusable template snippets (e.g., `pagination.html`).
-    *   `concrete_mix_app/`: Templates specific to the concrete app (dashboard, detail views, forms, list views).
+    *   `cdb_app/`: Templates specific to the concrete database app (dashboard, detail views, forms, list views).
 *   `static/`: Project-level static files (CSS, JavaScript, images) - currently empty, relying on Bootstrap CDN.
 
-## Core Features & Usage (Version 1)
+## Core Features & Usage
 
 *   **Authentication:**
     *   Sign up: `/accounts/signup/`
@@ -155,10 +158,23 @@ Follow these steps to set up the project locally:
 *   **Adding Data:**
     *   Add New Material: `/materials/add/` (redirects to detail page on success).
     *   Add New Concrete Mix: `/mixes/add/` (redirects to detail page on success).
-    *   Add Composition/Performance/Durability: Use the forms integrated into the Mix Detail page.
+    *   Add Components/Performance Results: Use the forms integrated into the Mix Detail page.
+    *   Add Datasets: `/datasets/add/` for adding new datasets.
 *   **Admin Interface (`/admin/`):**
     *   Requires superuser login.
     *   Provides direct access to view, add, edit, and delete data in all registered models (including Django's User/Group models and the concrete data models). Useful for data management and troubleshooting.
+
+## Recent Updates
+
+### Version 1.0.1 (May 13, 2025)
+*   Fixed field name inconsistencies after transition to single-app structure.
+*   Fixed relationship name references to ensure database consistency.
+*   Fixed JavaScript chart rendering in mix detail pages.
+
+### Version 1.0.0 (May 13, 2025)
+*   Consolidated application architecture - retired concrete_mix_app and transitioned to a single application (cdb_app).
+*   Updated all templates to extend `cdb_base.html` instead of `base.html`.
+*   Updated branding throughout to "Concrete Mix Database" instead of "CDB - Concrete Database".
 
 ## Future Enhancements Roadmap
 

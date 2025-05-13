@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.1] - 2025-05-13
+
+### Fixed
+- Fixed field name inconsistencies after transition to single-app structure (test_value → value_num, test_age_days → age_days)
+- Fixed relationship name references (mixcomponent_set → components, mixcomponent__mix__dataset → mix_usages__mix__dataset)
+- Fixed Dataset template to remove references to non-existent fields
+- Fixed JavaScript chart rendering in mix_detail.html
+- Removed obsolete base.html template file with references to retired concrete_mix_app
+
 ## [1.0.0] - 2025-05-13
 
 ### Major Changes

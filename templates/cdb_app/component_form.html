@@ -51,7 +51,7 @@
                 </div>
             </div>
             
-            {% if mix.mixcomponent_set.exists and not is_edit %}
+            {% if mix.components.exists and not is_edit %}
             <div class="card mt-4">
                 <div class="card-header bg-secondary text-white">
                     <i class="fas fa-list"></i> Current Components in {{ mix.mix_code }}
@@ -67,7 +67,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for comp in mix.mixcomponent_set.all %}
+                            {% for comp in mix.components.all %}
                                 <tr>
                                     <td>{{ comp.material.specific_name }}</td>
                                     <td>{{ comp.material.material_class.class_code }} - {{ comp.material.subtype_code }}</td>

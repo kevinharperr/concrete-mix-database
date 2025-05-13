@@ -31,28 +31,8 @@
                             <td>{{ dataset.dataset_id }}</td>
                         </tr>
                         <tr>
-                            <th>Created Date:</th>
-                            <td>{{ dataset.date_created|date:"F d, Y"|default:"Not specified" }}</td>
-                        </tr>
-                        <tr>
-                            <th>Creator:</th>
-                            <td>{{ dataset.created_by.get_full_name|default:dataset.created_by.username }}</td>
-                        </tr>
-                        <tr>
-                            <th>Description:</th>
-                            <td>{{ dataset.description|default:"No description provided"|linebreaks }}</td>
-                        </tr>
-                        <tr>
-                            <th>Source:</th>
-                            <td>{{ dataset.source|default:"Not specified" }}</td>
-                        </tr>
-                        <tr>
                             <th>License:</th>
-                            <td>{{ dataset.license_info|default:"Not specified" }}</td>
-                        </tr>
-                        <tr>
-                            <th>Notes:</th>
-                            <td>{{ dataset.notes|default:"No notes available"|linebreaks }}</td>
+                            <td>{{ dataset.license|default:"Not specified" }}</td>
                         </tr>
                     </table>
                 </div>
@@ -131,7 +111,7 @@
                                     <td>{{ mix.w_c_ratio|default_if_none:"-" }}</td>
                                     <td>{{ mix.w_b_ratio|default_if_none:"-" }}</td>
                                     <td>{{ mix.target_strength_mpa|default_if_none:"-" }} MPa</td>
-                                    <td>{{ mix.mixcomponent_set.count }}</td>
+                                    <td>{{ mix.components.count }}</td>
                                     <td>
                                         <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}" class="btn btn-sm btn-info">
                                             <i class="fas fa-eye"></i> View

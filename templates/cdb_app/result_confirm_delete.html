@@ -18,9 +18,9 @@
                     <div class="alert alert-secondary">
                         <h6>{{ result.category }}</h6>
                         <p class="mb-0 small">
-                            Value: {{ result.test_value }} {{ result.unit.unit_symbol|default:"" }}<br>
-                            {% if result.test_age_days %}
-                                Test Age: {{ result.test_age_days }} days<br>
+                            Value: {{ result.value_num }} {{ result.unit.unit_symbol|default:"" }}<br>
+                            {% if result.age_days %}
+                                Test Age: {{ result.age_days }} days<br>
                             {% endif %}
                             {% if result.test_method %}
                                 Test Method: {{ result.test_method.description|default:"Not specified" }}
