@@ -91,14 +91,6 @@ WSGI_APPLICATION = 'concrete_mix_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'concrete_mix_db',
-        'USER': 'postgres',
-        'PASSWORD': '264537',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    },
-    'cdb': {  # New clean database connection
-        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'cdb',
         'USER': 'postgres',
         'PASSWORD': '264537',
@@ -107,8 +99,7 @@ DATABASES = {
     }
 }
 
-# Database router to direct cdb_app models to the 'cdb' database
-DATABASE_ROUTERS = ['concrete_mix_project.db_router.CdbRouter']
+# Using a single database for all apps, no router needed
 
 
 # Password validation

@@ -8,6 +8,7 @@
 - Fixed Dataset template to remove references to non-existent fields
 - Fixed JavaScript chart rendering in mix_detail.html
 - Removed obsolete base.html template file with references to retired concrete_mix_app
+- Consolidated database configuration to use single 'cdb' database
 
 ## [1.0.0] - 2025-05-13
 
