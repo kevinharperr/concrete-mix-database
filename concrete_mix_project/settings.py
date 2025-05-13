@@ -39,8 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Local apps
-    'concrete_mix_app',
-    'cdb_app',  # New clean database app
+    'cdb_app',  # Main database app
     
     # Third-party apps
     'crispy_forms',

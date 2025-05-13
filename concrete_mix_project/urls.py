@@ -22,9 +22,6 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),  # Django-allauth URLs
     path('select2/', include('django_select2.urls')),  # Django-select2 URLs
     
-    # Original concrete_mix_app URLs (using original database)
-    path('', include('concrete_mix_app.urls')),  # Original app URLs at root
-    
-    # New CDB app URLs (using improved database schema)
-    path('cdb/', include('cdb_app.urls')),  # New app URLs under /cdb/ prefix
+    # CDB app URLs (main application)
+    path('', include('cdb_app.urls')),  # Main app URLs
 ]
