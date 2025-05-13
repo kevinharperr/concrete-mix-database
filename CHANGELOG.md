@@ -12,6 +12,7 @@
 - Fixed schema path issues with PostgreSQL tables in the 'cdb' database
 - Removed explicit database references (.using('cdb')) from views and API for cleaner code
 - Migrated Django system tables to 'cdb' database to ensure proper authentication and session management
+- Cleaned up remaining content types from retired concrete_mix_app to prevent potential conflicts
 
 ## [1.0.0] - 2025-05-13
 
