@@ -219,13 +219,24 @@ def mix_list_view(request):
     min_strength = request.GET.get('min_strength')
     if min_strength and min_strength.isdigit():
         # Join with performance results and filter by 28-day compressive strength
-        mixes = mixes.filter(
-            (Q(performance_results__category__icontains='compressive') | 
-             Q(performance_results__category__icontains='strength') | 
-             Q(performance_results__category__icontains='hardened')),
+        # Use union to combine different category filters instead of Q objects
+        mixes_compressive = mixes.filter(
+            performance_results__category__icontains='compressive',
             performance_results__age_days=28,
             performance_results__value_num__gte=min_strength
-        ).distinct()  # Use distinct to avoid duplicates
+        )
+        mixes_strength = mixes.filter(
+            performance_results__category__icontains='strength',
+            performance_results__age_days=28,
+            performance_results__value_num__gte=min_strength
+        )
+        mixes_hardened = mixes.filter(
+            performance_results__category__icontains='hardened',
+            performance_results__age_days=28,
+            performance_results__value_num__gte=min_strength
+        )
+        # Combine the results
+        mixes = mixes_compressive.union(mixes_strength, mixes_hardened).distinct()
         filters_applied = True
     
     # Filter by strength class
@@ -367,6 +378,8 @@ def add_mix(request):
     }
     
 def mix_detail(request, pk):
+    import logging
+    logger = logging.getLogger(__name__)
     """Display details of a specific concrete mix."""
     mix = get_object_or_404(ConcreteMix.objects.select_related('dataset'), pk=pk)
     
@@ -418,10 +431,16 @@ def mix_detail(request, pk):
         strength_class_info['reported_classification'] = classify_strength_by_reported_class(mix.strength_class)
     
     # Look for 28-day compression test results for classification
-    compressive_tests = performance_results.filter(
-        (Q(category__icontains='compressive') | Q(category__icontains='strength') | 
-         Q(category__icontains='hardened')),
-        age_days=28
+    # First filter by age_days=28
+    compressive_tests = performance_results.filter(age_days=28)
+    
+    # Then filter by category using a method that doesn't require Q objects
+    compressive_tests = compressive_tests.filter(
+        category__icontains='compressive'
+    ).union(
+        performance_results.filter(age_days=28, category__icontains='strength')
+    ).union(
+        performance_results.filter(age_days=28, category__icontains='hardened')
     ).order_by('-value_num')  # Get the highest value if multiple tests exist
     
     if compressive_tests.exists():
