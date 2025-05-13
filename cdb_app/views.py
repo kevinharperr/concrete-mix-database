@@ -220,7 +220,9 @@ def mix_list_view(request):
     if min_strength and min_strength.isdigit():
         # Join with performance results and filter by 28-day compressive strength
         mixes = mixes.filter(
-            performance_results__category__icontains='compressive',
+            (models.Q(performance_results__category__icontains='compressive') | 
+             models.Q(performance_results__category__icontains='strength') | 
+             models.Q(performance_results__category__icontains='hardened')),
             performance_results__age_days=28,
             performance_results__value_num__gte=min_strength
         ).distinct()  # Use distinct to avoid duplicates
@@ -254,7 +256,9 @@ def mix_list_view(request):
             if min_strength_value:
                 # Filter by calculated minimum strength
                 mixes = mixes.filter(
-                    performance_results__category__icontains='compressive',
+                    (models.Q(performance_results__category__icontains='compressive') | 
+                     models.Q(performance_results__category__icontains='strength') | 
+                     models.Q(performance_results__category__icontains='hardened')),
                     performance_results__age_days=28,
                     performance_results__value_num__gte=min_strength_value
                 ).distinct()
@@ -415,7 +419,8 @@ def mix_detail(request, pk):
     
     # Look for 28-day compression test results for classification
     compressive_tests = performance_results.filter(
-        category__icontains='compressive',
+        (models.Q(category__icontains='compressive') | models.Q(category__icontains='strength') | 
+         models.Q(category__icontains='hardened')),
         age_days=28
     ).order_by('-value_num')  # Get the highest value if multiple tests exist
     
