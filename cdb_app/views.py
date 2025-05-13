@@ -20,7 +20,7 @@ from .forms import (
 
 from django.db.models import (
     Count, Avg, Prefetch, Max, OuterRef, Subquery, F, Value, CharField, BigIntegerField,
-    ExpressionWrapper
+    ExpressionWrapper, Q
 )
 # Using RawSQL for natural sorting (matching functionality from original app)
 from django.db.models.expressions import RawSQL
