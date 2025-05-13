@@ -1,0 +1,16 @@
+source_column,target_table,target_column,extra_kwargs
+item number,concrete_mix,mix_code,
+mix_name_ref,concrete_mix,notes,"{""prefix"": ""Original mix ref: ""}"
+binder(s),concrete_mix,notes,"{""prefix"": ""Binder(s): ""}"
+cement type,concrete_mix,notes,"{""prefix"": ""Cement type: ""}"
+cemen_strength_class,concrete_mix,notes,"{""prefix"": ""Cement strength class: ""}"
+clinker content,concrete_mix,notes,"{""prefix"": ""Clinker content: ""}"
+cement content,mix_component,Cement,"{""class_code"": ""CEMENT"", ""is_cementitious"": true, ""source_type_column"": ""cement type""}"
+scm1 content (kg/m3),mix_component,SCM 1,"{""class_code"": ""SCM"", ""is_cementitious"": true, ""source_type_column"": ""scm1 type""}"
+scm2 content (kg/m3),mix_component,SCM 2,"{""class_code"": ""SCM"", ""is_cementitious"": true, ""source_type_column"": ""scm2 type""}"
+water content (kg/m3),mix_component,Water,"{""class_code"": ""WATER"", ""subtype_code"": ""water"", ""is_cementitious"": false}"
+admixture1_kgm3,mix_component,ADM 1,"{""class_code"": ""ADM"", ""is_cementitious"": false, ""source_type_column"": ""admixture1_type""}"
+admixture2_kgm3,mix_component,ADM 2,"{""class_code"": ""ADM"", ""is_cementitious"": false, ""source_type_column"": ""admixture2_type""}"
+water binder ratio,concrete_mix,wb_k_reported,"{""k_flag"": true}"
+fcm. cube 150. wet curing (28 d),performance_result,compressive_strength,"{""category"": ""hardened"", ""test_method_id"": 1, ""unit_id"": 6, ""age_days"": 28}"
+reference number,bibliographic_reference,citation_text,

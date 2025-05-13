@@ -1,0 +1,106 @@
+{% extends 'cdb_base.html' %}
+{% load static %}
+
+{% block title %}CDB Dashboard - Improved Concrete Mix Database{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>CDB Dashboard</h1>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> You are using the improved CDB database with enhanced schema and standardized material naming.
+    </div>
+    <hr>
+
+    <p>Welcome, {{ user.email }}!</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    Quick Stats
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Mixes:</strong> {{ mix_count }}</p>
+                    <p><strong>Materials Tracked:</strong> {{ material_count }}</p>
+                    <p><strong>Datasets:</strong> {{ dataset_count }}</p>
+                    <p><strong>Performance Tests Recorded:</strong> {{ performance_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    Recent Mixes Added
+                </div>
+                {% if recent_mixes %}
+                    <ul class="list-group list-group-flush">
+                        {% for mix in recent_mixes %}
+                            <li class="list-group-item">
+                                <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}">{{ mix.mix_code }}</a>
+                                <small class="text-muted">({{ mix.dataset.dataset_name|default:"Unknown Dataset" }})</small>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="card-body">
+                        <p class="text-muted">No recent mixes found.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    Quick Actions
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'cdb_app:mix_list' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-list"></i> Browse Mixes
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'cdb_app:material_list' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-boxes"></i> View Materials
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'cdb_app:add_mix' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-plus-circle"></i> Add New Mix
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'cdb_app:add_material' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-plus-circle"></i> Add New Material
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h2>About the CDB Database</h2>
+        <p>
+            The CDB database provides an improved schema for concrete mix data with standardized material naming conventions.
+            Key improvements include:
+        </p>
+        <ul>
+            <li>Standardized material classifications and naming</li>
+            <li>Better organization of performance results</li>
+            <li>More detailed mix properties</li>
+            <li>Enhanced data validation</li>
+        </ul>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Add page-specific JS if needed -->
+{% endblock %}

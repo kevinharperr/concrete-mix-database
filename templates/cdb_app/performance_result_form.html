@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Performance Result - CDB{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    {% if is_edit %}
+                        <i class="fas fa-edit"></i> Edit Performance Result for {{ mix.mix_code }}
+                    {% else %}
+                        <i class="fas fa-plus-circle"></i> Add Performance Result to {{ mix.mix_code }}
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        {% if is_edit %}
+                            You are editing a performance result for mix <strong>{{ mix.mix_code }}</strong>.
+                        {% else %}
+                            You are adding a new performance result to mix <strong>{{ mix.mix_code }}</strong>.
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-flex justify-content-between mt-3">
+                            <div>
+                                {% if is_edit %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Update Result
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-plus-circle"></i> Add Result
+                                    </button>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Mix
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if mix.performanceresult_set.exists and not is_edit %}
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-list"></i> Current Performance Results for {{ mix.mix_code }}
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Test Method</th>
+                                <th>Age (days)</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in mix.performanceresult_set.all %}
+                                <tr>
+                                    <td>{{ result.category }}</td>
+                                    <td>{{ result.test_method.description|default:"Not specified" }}</td>
+                                    <td>{{ result.test_age_days|default_if_none:"-" }}</td>
+                                    <td>{{ result.test_value }}</td>
+                                    <td>{{ result.unit.unit_symbol|default:"" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Any performance result form-related JavaScript can be added here
+</script>
+{% endblock %}

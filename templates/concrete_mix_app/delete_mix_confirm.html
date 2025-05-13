@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Mix - Concrete Mix Database{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">Delete Confirmation</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone.
+                    </div>
+                    
+                    <p class="lead">
+                        Are you sure you want to delete the concrete mix 
+                        <strong>"{{ mix.mix_code|default:mix.pk }}"</strong>?
+                    </p>
+                    
+                    <p>This will permanently delete:</p>
+                    <ul>
+                        <li>The mix record itself</li>
+                        <li>All associated mix compositions</li>
+                        <li>All associated performance results</li>
+                        <li>All associated durability results</li>
+                        <li>All associated sustainability metrics</li>
+                    </ul>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'concrete_mix_app:mix_detail' pk=mix.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i> Delete Mix
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

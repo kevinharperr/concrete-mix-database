@@ -1,0 +1,13 @@
+﻿source_column,target_table,target_column,extra_kwargs
+water_cement_ratio,concrete_mix,w_c_ratio,{}
+water_binder_ratio,concrete_mix,w_b_ratio,{}
+coarse-agg_fine-agg_ratio,concrete_mix,notes,"{""prefix"":""CA/FA ratio:""}"
+cement_kg_m3,mix_component,CEM I,"{""class_code"":""CEMENT"",""subtype_code"":""CEM I"",""is_cementitious"":true}"
+blas_furnace_slag_kg_m3,mix_component,GGBS,"{""class_code"":""SCM"",""subtype_code"":""GGBS"",""is_cementitious"":true}"
+fly_ash_kg_m3,mix_component,Fly Ash,"{""class_code"":""SCM"",""subtype_code"":""FA"",""is_cementitious"":true}"
+water_kg_m3,mix_component,Water,"{""class_code"":""WATER""}"
+superplasticizer_kg_m3,mix_component,Superplasticizer,"{""class_code"":""ADM"",""subtype_code"":""SP""}"
+natural_coarse_aggregate_kg_m3,mix_component,NCA,"{""class_code"":""AGGR_C""}"
+natural_fine_aggregate_kg_m3,mix_component,NFA,"{""class_code"":""AGGR_F""}"
+superplasticizer_percentage_weight_of_cement_%,concrete_mix,notes,"{""prefix"":""SP % of cement:""}"
+fck_mpa,performance_result,value_num,"{""category"":""hardened"",""unit_id"":6,""test_method_id"":2,""age_column"":""testing_age""}"

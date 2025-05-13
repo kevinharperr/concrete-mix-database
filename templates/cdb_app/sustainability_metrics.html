@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sustainability Metrics - CDB{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Sustainability Metrics for {{ mix.mix_code }}</h1>
+        <div>
+            <a href="{% url 'cdb_app:add_sustainability_metric' mix_pk=mix.pk %}" class="btn btn-success">
+                <i class="fas fa-plus-circle"></i> Add Metric
+            </a>
+        </div>
+    </div>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> View and manage environmental impact metrics for this concrete mix.
+    </div>
+    <hr>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-leaf"></i> Environmental Impact
+                </div>
+                <div class="card-body">
+                    {% if metrics %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Metric Type</th>
+                                        <th>Value</th>
+                                        <th>Unit</th>
+                                        <th>Calculation Method</th>
+                                        <th>Source/Reference</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for metric in metrics %}
+                                        <tr>
+                                            <td>{{ metric.metric_type }}</td>
+                                            <td>{{ metric.value }}</td>
+                                            <td>{{ metric.unit.unit_symbol|default:"" }}</td>
+                                            <td>{{ metric.calculation_method|default:"Not specified" }}</td>
+                                            <td>{{ metric.reference_source|default:"Not specified" }}</td>
+                                            <td>
+                                                <a href="{% url 'cdb_app:edit_sustainability_metric' mix_pk=mix.pk metric_pk=metric.pk %}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'cdb_app:delete_sustainability_metric' mix_pk=mix.pk metric_pk=metric.pk %}" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h5>Visualization</h5>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <canvas id="sustainabilityChart" width="400" height="250"></canvas>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header bg-success text-white">
+                                            Summary
+                                        </div>
+                                        <div class="card-body">
+                                            <p><strong>Total GWP:</strong> {{ gwp_total|default_if_none:"-" }} kg CO₂ eq</p>
+                                            <p><strong>Energy Consumption:</strong> {{ energy_total|default_if_none:"-" }} MJ</p>
+                                            <p><strong>Water Usage:</strong> {{ water_total|default_if_none:"-" }} L</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No sustainability metrics have been added for this mix.</p>
+                        <a href="{% url 'cdb_app:add_sustainability_metric' mix_pk=mix.pk %}" class="btn btn-success">
+                            <i class="fas fa-plus-circle"></i> Add First Metric
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-info-circle"></i> About Sustainability Metrics
+        </div>
+        <div class="card-body">
+            <p>The following metrics are typically tracked for concrete sustainability:</p>
+            <ul>
+                <li><strong>Global Warming Potential (GWP):</strong> Measured in kg CO₂ equivalent, represents the carbon footprint.</li>
+                <li><strong>Embodied Energy:</strong> Total energy required for production, measured in MJ.</li>
+                <li><strong>Water Usage:</strong> Water consumption during production, measured in liters.</li>
+                <li><strong>Resource Depletion:</strong> Impact on natural resources.</li>
+                <li><strong>Acidification Potential:</strong> Contribution to acid rain formation.</li>
+                <li><strong>Eutrophication Potential:</strong> Impact on ecosystems due to nutrient enrichment.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="mb-4">
+        <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Mix Details
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if metrics %}
+        // Create a sustainability metrics chart
+        const ctx = document.getElementById('sustainabilityChart');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [{% for metric in metrics %}"{{ metric.metric_type }}",{% endfor %}],
+                datasets: [{
+                    label: 'Value',
+                    data: [{% for metric in metrics %}{{ metric.value }},{% endfor %}],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(153, 102, 255, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Sustainability Metrics'
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

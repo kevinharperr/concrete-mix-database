@@ -1,0 +1,98 @@
+[
+  {
+    "dataset": "DS1",
+    "total_mixes": 1030,
+    "scm_mixes": 1030,
+    "scm_percentage": 100.0,
+    "scm_types": {
+      "FA": {
+        "count": 1030,
+        "percentage": 100.0
+      }
+    }
+  },
+  {
+    "dataset": "DS3",
+    "total_mixes": 2312,
+    "scm_mixes": 2312,
+    "scm_percentage": 100.0,
+    "scm_types": {
+      "BFS": {
+        "count": 2312,
+        "percentage": 100.0
+      }
+    }
+  },
+  {
+    "dataset": "DS4",
+    "total_mixes": 90,
+    "scm_mixes": 90,
+    "scm_percentage": 100.0,
+    "scm_types": {
+      "Limestone Powder": {
+        "count": 90,
+        "percentage": 100.0
+      }
+    }
+  },
+  {
+    "dataset": "DS5",
+    "total_mixes": 1410,
+    "scm_mixes": 1410,
+    "scm_percentage": 100.0,
+    "scm_types": {
+      "fly_ash_bituminous_coal": {
+        "count": 465,
+        "percentage": 32.97872340425532
+      },
+      "ggbfs": {
+        "count": 379,
+        "percentage": 26.879432624113477
+      },
+      "sf": {
+        "count": 96,
+        "percentage": 6.808510638297872
+      },
+      "cfa": {
+        "count": 50,
+        "percentage": 3.546099290780142
+      },
+      "natural_pozzolan": {
+        "count": 30,
+        "percentage": 2.127659574468085
+      },
+      "fly_ash_lignite_brown_coal_": {
+        "count": 6,
+        "percentage": 0.425531914893617
+      },
+      "fa": {
+        "count": 3,
+        "percentage": 0.2127659574468085
+      },
+      "iii/c": {
+        "count": 3,
+        "percentage": 0.2127659574468085
+      },
+      "cc": {
+        "count": 2,
+        "percentage": 0.14184397163120568
+      }
+    }
+  },
+  {
+    "dataset": "DS6",
+    "total_mixes": 654,
+    "scm_mixes": 353,
+    "scm_percentage": 53.97553516819572,
+    "scm_types": {
+      "FA": {
+        "count": 245,
+        "percentage": 69.40509915014165
+      },
+      "GGBFS": {
+        "count": 108,
+        "percentage": 30.59490084985836
+      }
+    }
+  }
+]

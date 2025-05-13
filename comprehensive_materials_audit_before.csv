@@ -1,0 +1,48 @@
+phase,material_id,class_code,subtype_code_lower,specific_name
+before,13,WATER,water,Water
+before,15,AGGR_C,rca,Recycled Coarse Aggregate
+before,24,SCM,(null),SCM 1
+before,26,ADM,(null),ADM 1
+before,32,ADM,air_entrainer,air_entrainer
+before,44,ADM,accelerator,accelerator
+before,46,ADM,sp___air_entrainer,sp___air_entrainer
+before,50,ADM,retarder,retarder
+before,54,SCM,specific_name,OPC
+before,68,WATER,added_water,dosage_kg_m3
+before,72,SCM,ba,ba
+before,75,SCM,fluidized_fly_ash,fluidized_fly_ash
+before,76,SCM,natural_zeolite,natural_zeolite
+before,77,SCM,scm1,dosage_kg_m3
+before,69,SCM,rha,Rice Husk Ash
+before,3,CEMENT,cem i,CEM I
+before,23,CEMENT,cem_i,cem_i
+before,27,CEMENT,cem_iii/a,cem_iii/a
+before,28,CEMENT,cem_iii/b,cem_iii/b
+before,29,CEMENT,cem_ii/all,cem_ii/all
+before,30,CEMENT,cem_ii/bs,cem_ii/bs
+before,35,CEMENT,cem_ii/bm__sll_,cem_ii/bm__sll_
+before,37,CEMENT,cem_ii/bv,cem_ii/bv
+before,39,CEMENT,cem_ii/bll,cem_ii/bll
+before,40,CEMENT,cem_ii/cm__sll_,cem_ii/cm__sll_
+before,41,CEMENT,cem_ii/bm__vll_,cem_ii/bm__vll_
+before,42,CEMENT,cem_ii/cm__vll_,cem_ii/cm__vll_
+before,43,CEMENT,cem_ii/as,cem_ii/as
+before,49,CEMENT,cem_ii/am__sll_,cem_ii/am__sll_
+before,4,SCM,ggbs,Ground-granulated Blast-furnace Slag
+before,5,SCM,fly_ash,Fly Ash (General)
+before,6,WATER,water,Water
+before,7,ADM,superplasticizer,Superplasticizer (HRWR)
+before,8,AGGR_C,natural_coarse_aggregate,Natural Coarse Aggregate
+before,9,AGGR_F,natural_fine_aggregate,Natural Fine Aggregate
+before,14,AGGR_F,nfa,Natural Fine Aggregate
+before,16,AGGR_C,nca,Natural Coarse Aggregate
+before,21,SCM,limestone_powder,Limestone Powder (Filler)
+before,31,SCM,silica_fume,Silica Fume
+before,38,CEMENT,cem_iii/c,CEM III/C (Blastfurnace Cement)
+before,47,SCM,calcined_fly_ash,Calcined Fly Ash
+before,48,SCM,calcined_clay,Calcined Clay (Metakaolin)
+before,51,SCM,fly_ash_lignite,Fly Ash - Lignite/Brown Coal (Class F)
+before,52,SCM,fly_ash_bituminous,Fly Ash - Bituminous Coal (Class F)
+before,53,CEMENT,portland_cement,Portland Cement
+before,73,SCM,pofa,Palm Oil Fly Ash
+before,36,SCM,natural_pozzolan,Natural Pozzolan

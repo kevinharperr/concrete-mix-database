@@ -1,0 +1,6 @@
+source_column,target_table,target_column,extra_kwargs
+study_number,concrete_mix,mix_code,{"prefix": "DS6-"}
+"Cement (kg/m3)",mix_component,dosage_kg_m3,{"class_code":"CEMENT", "subtype_code":"CEM I", "specific_name":"Ordinary Portland Cement", "reference_key":"CEMENT"}
+fly_ash_kg_m3,mix_component,dosage_kg_m3,{"class_code":"SCM", "subtype_code":"FA", "specific_name":"Fly Ash", "reference_key":"FA"}
+nca_sg,aggregate_detail,bulk_density_kg_m3,{"material_ref_key":"CEMENT"}
+fcm_28d_mpa,performance_result,value_num,{"category":"hardened", "age_days":28}

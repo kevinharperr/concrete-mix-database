@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Sustainability Metric - CDB{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    {% if is_edit %}
+                        <i class="fas fa-edit"></i> Edit Sustainability Metric for {{ mix.mix_code }}
+                    {% else %}
+                        <i class="fas fa-plus-circle"></i> Add Sustainability Metric to {{ mix.mix_code }}
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        {% if is_edit %}
+                            You are editing a sustainability metric for mix <strong>{{ mix.mix_code }}</strong>.
+                        {% else %}
+                            You are adding a new sustainability metric to mix <strong>{{ mix.mix_code }}</strong>.
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-flex justify-content-between mt-3">
+                            <div>
+                                {% if is_edit %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Update Metric
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-plus-circle"></i> Add Metric
+                                    </button>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{% url 'cdb_app:sustainability_metrics' mix_pk=mix.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Metrics
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-info-circle"></i> Sustainability Metrics Reference
+                </div>
+                <div class="card-body">
+                    <h5>Common Sustainability Metrics for Concrete:</h5>
+                    <ul>
+                        <li><strong>Global Warming Potential (GWP):</strong> Typically measured in kg CO₂ equivalent</li>
+                        <li><strong>Embodied Energy:</strong> Measured in MJ (megajoules)</li>
+                        <li><strong>Water Usage:</strong> Measured in liters</li>
+                        <li><strong>Resource Depletion Potential:</strong> Various units depending on the specific calculation method</li>
+                        <li><strong>Acidification Potential:</strong> Typically measured in kg SO₂ equivalent</li>
+                        <li><strong>Eutrophication Potential:</strong> Typically measured in kg PO₄ equivalent</li>
+                    </ul>
+                    <p class="mb-0"><small>These are guidelines only. The appropriate metrics and calculation methods may vary depending on your specific requirements and the environmental assessment methodology being followed.</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

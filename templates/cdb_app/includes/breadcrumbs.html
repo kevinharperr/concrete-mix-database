@@ -1,0 +1,12 @@
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-light p-2">
+        <li class="breadcrumb-item"><a href="{% url 'cdb_app:dashboard' %}">Dashboard</a></li>
+        {% for crumb in breadcrumbs %}
+            {% if forloop.last %}
+                <li class="breadcrumb-item active" aria-current="page">{{ crumb.title }}</li>
+            {% else %}
+                <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.title }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav>

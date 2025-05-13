@@ -1,0 +1,932 @@
+# cdb_app/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.http import HttpResponse, HttpResponseForbidden
+from django.urls import reverse
+import csv
+from functools import wraps
+
+from .models import (
+    Material, ConcreteMix, MixComponent, PerformanceResult, 
+    BibliographicReference, Dataset, MaterialClass, MaterialProperty,
+    CuringRegime, TestMethod, Specimen, SustainabilityMetric, UnitLookup
+)
+from .forms import (
+    MaterialForm, ConcreteMixForm, MixComponentForm, PerformanceResultForm,
+    SpecimenForm, BibliographicReferenceForm, SustainabilityMetricsForm,
+    DatasetForm
+)
+
+from django.db.models import (
+    Count, Prefetch, Max, OuterRef, Subquery, F, Value, CharField, BigIntegerField,
+    ExpressionWrapper
+)
+# Using RawSQL for natural sorting (matching functionality from original app)
+from django.db.models.expressions import RawSQL
+from django.db.models.functions import Coalesce
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+# Custom decorator to check if user can contribute data
+def contributor_required(view_func):
+    """
+    Decorator that checks if the user is a Data Contributor or Admin
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        # Check if user is in the Data Contributors group or is an admin
+        if not request.user.is_superuser and not request.user.groups.filter(name__in=['Data Contributors', 'Admins']).exists():
+            messages.error(request, 'You do not have permission to contribute data. Please contact an administrator to request access.')
+            return HttpResponseForbidden('Permission denied: You must be a Data Contributor or Admin to perform this action.')
+            
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+# --- Dashboard --- #
+@login_required
+def dashboard(request):
+    """Dashboard view for the CDB app."""
+    # Get counts of various entities
+    mix_count = ConcreteMix.objects.using('cdb').count()
+    material_count = Material.objects.using('cdb').count()
+    dataset_count = Dataset.objects.using('cdb').count()
+    performance_count = PerformanceResult.objects.using('cdb').count()
+    
+    # Get recent mixes
+    recent_mixes = ConcreteMix.objects.using('cdb').order_by('-mix_id')[:5]
+    
+    context = {
+        'mix_count': mix_count,
+        'material_count': material_count,
+        'dataset_count': dataset_count,
+        'performance_count': performance_count,
+        'recent_mixes': recent_mixes,
+        'app_name': 'cdb_app',  # For template context
+    }
+    
+    return render(request, 'cdb_app/dashboard.html', context)
+
+# --- Material Views --- #
+@login_required
+def material_list_view(request):
+    """Display a list of all materials in the database."""
+    materials = Material.objects.using('cdb').select_related('material_class').order_by('material_class', 'subtype_code')
+    
+    # Get statistics on materials
+    material_class_stats = MaterialClass.objects.using('cdb').annotate(
+        material_count=Count('materials')  # Changed from 'material' to 'materials' to match related_name
+    ).order_by('class_code')
+    
+    context = {
+        'materials': materials,
+        'material_class_stats': material_class_stats,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/material_list.html', context)
+
+@login_required
+@contributor_required
+def add_material(request):
+    """Add a new material to the database."""
+    if request.method == 'POST':
+        form = MaterialForm(request.POST)
+        if form.is_valid():
+            material = form.save(commit=False)
+            # Save to the 'cdb' database
+            material.save(using='cdb')
+            messages.success(request, f'Material {material.specific_name} created successfully!')
+            return redirect('cdb_app:material_detail', pk=material.material_id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = MaterialForm()
+    
+    context = {
+        'form': form,
+        'form_title': 'Add Material',
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+def material_detail(request, pk):
+    """Display details of a specific material."""
+    material = get_object_or_404(Material.objects.using('cdb').select_related('material_class'), pk=pk)
+    
+    # Get associated properties
+    properties = MaterialProperty.objects.using('cdb').filter(material=material)
+    
+    # Get mixes that use this material
+    mix_components = MixComponent.objects.using('cdb').filter(material=material).select_related('mix')
+    
+    context = {
+        'material': material,
+        'properties': properties,
+        'mix_components': mix_components,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/material_detail.html', context)
+
+@login_required
+@contributor_required
+def edit_material_view(request, pk):
+    """Edit an existing material with permission checks."""
+    material = get_object_or_404(Material.objects.using('cdb'), pk=pk)
+    
+    if request.method == 'POST':
+        form = MaterialForm(request.POST, instance=material)
+        if form.is_valid():
+            # Save to the 'cdb' database
+            form.save(using='cdb')
+            messages.success(request, f'Material {material.specific_name} updated successfully!')
+            return redirect('cdb_app:material_detail', pk=pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = MaterialForm(instance=material)
+    
+    context = {
+        'form': form,
+        'form_title': f'Edit Material: {material.specific_name}',
+        'is_edit': True,
+        'material': material,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+def delete_material_view(request, pk):
+    """Delete a material with permission checks - Admin only."""
+    material = get_object_or_404(Material.objects.using('cdb'), pk=pk)
+    
+    # Only allow admins to delete materials
+    if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
+        messages.error(request, 'Only administrators can delete materials.')
+        return HttpResponseForbidden('Permission denied: Only administrators can delete materials.')
+    
+    if request.method == 'POST':
+        # Check if this material is used in any mixes
+        if MixComponent.objects.using('cdb').filter(material=material).exists():
+            messages.error(request, f'Cannot delete material {material.specific_name} because it is used in concrete mixes.')
+            return redirect('cdb_app:material_detail', pk=pk)
+        
+        # Store name for success message
+        material_name = material.specific_name or f'ID: {material.pk}'
+        
+        # Delete the material from 'cdb' database
+        material.delete(using='cdb')
+        
+        messages.success(request, f'Material {material_name} deleted successfully!')
+        return redirect('cdb_app:material_list')
+    
+    context = {
+        'material': material,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/material_confirm_delete.html', context)
+
+# --- Concrete Mix Views --- #
+@login_required
+def mix_list_view(request):
+    """Display a filterable list of mixes, handles sorting and CSV export."""
+    # Base queryset
+    queryset = ConcreteMix.objects.using('cdb')
+    
+    # Apply filtering (will implement with django-filter later)
+    filtered_qs = queryset
+    
+    # Handle sorting
+    sort_param = request.GET.get('sort', 'mix_code_natural')
+    
+    try:
+        # Annotate for natural sorting (same as in original app)
+        annotated_qs = filtered_qs.annotate(
+            # Extract the trailing number for secondary sorting
+            mix_code_number=RawSQL(
+                "COALESCE(NULLIF(SUBSTRING(mix_code FROM '([0-9]+)$'), ''), '0')::bigint",
+                [],
+                output_field=BigIntegerField()
+            )
+        )
+        # Order by dataset first, then by numeric part
+        can_natural_sort = True
+    except Exception as e:
+        print(f"Warning: Could not annotate for natural sorting: {e}")
+        annotated_qs = filtered_qs  # Fallback if annotation fails
+        can_natural_sort = False
+        # If annotation fails, fallback to mix_id
+        if 'natural' in sort_param:
+            sort_param = 'mix_id'
+    
+    # Determine final ordering
+    if sort_param == 'mix_code_natural' and can_natural_sort:
+        ordered_qs = annotated_qs.order_by('dataset', 'mix_code_number')
+    elif sort_param == '-mix_code_natural' and can_natural_sort:
+        ordered_qs = annotated_qs.order_by('-dataset', '-mix_code_number')
+    else:
+        ordered_qs = annotated_qs.order_by('mix_id')
+        if not (sort_param == 'mix_code_natural' and can_natural_sort):
+            sort_param = 'mix_id'
+    
+    # CSV Export
+    if request.GET.get('export') == 'csv' and request.user.is_authenticated:
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="concrete_mixes_export.csv"'
+        writer = csv.writer(response)
+        writer.writerow([
+            'Mix ID', 'Mix Code', 'Dataset', 'Region', 'W/C Ratio', 'W/B Ratio',
+            'Target Strength (MPa)', 'Target Slump (mm)', 'Notes',
+        ])
+        
+        for mix in ordered_qs:
+            writer.writerow([
+                mix.mix_id, mix.mix_code, 
+                mix.dataset.dataset_name if mix.dataset else None,
+                mix.region_country, mix.w_c_ratio, mix.w_b_ratio,
+                mix.target_strength_mpa, mix.target_slump_mm, mix.notes,
+            ])
+        return response
+    
+    # Pagination
+    try:
+        page_size = int(request.GET.get('page_size', 25))
+        page_size = min(max(page_size, 10), 100)  # Between 10 and 100
+    except (ValueError, TypeError):
+        page_size = 25  # Default if invalid
+    
+    paginator = Paginator(ordered_qs, page_size)
+    page_number = request.GET.get('page')
+    
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    
+    context = {
+        'page_obj': page_obj,
+        'current_ordering': sort_param,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/mix_list.html', context)
+
+@login_required
+@contributor_required
+def add_mix(request):
+    """Add a new concrete mix to the database."""
+    if request.method == 'POST':
+        form = ConcreteMixForm(request.POST)
+        if form.is_valid():
+            mix = form.save(commit=False)
+            # Save to the 'cdb' database
+            mix.save(using='cdb')
+            messages.success(request, f'Mix {mix.mix_code} created successfully!')
+            return redirect('cdb_app:mix_detail', pk=mix.mix_id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ConcreteMixForm()
+    
+    context = {
+        'form': form,
+        'form_title': 'Add Concrete Mix',
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+def mix_detail(request, pk):
+    """Display details of a specific concrete mix."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb').select_related('dataset'), pk=pk)
+    
+    # Get mix components
+    components = MixComponent.objects.using('cdb').filter(
+        mix=mix
+    ).select_related('material', 'material__material_class')
+    
+    # Get performance results
+    performance_results = PerformanceResult.objects.using('cdb').filter(
+        mix=mix
+    ).select_related('test_method', 'unit', 'specimen')
+    
+    # Get reference, if any
+    references = BibliographicReference.objects.using('cdb').filter(pk__in=mix.references.all())
+    
+    context = {
+        'mix': mix,
+        'components': components,
+        'performance_results': performance_results,
+        'references': references,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/mix_detail.html', context)
+
+@login_required
+@contributor_required
+def edit_mix_view(request, pk):
+    """Edit an existing concrete mix with permission checks."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=pk)
+    
+    if request.method == 'POST':
+        form = ConcreteMixForm(request.POST, instance=mix)
+        if form.is_valid():
+            # Save to the 'cdb' database
+            form.save(using='cdb')
+            messages.success(request, f'Mix {mix.mix_code} updated successfully!')
+            return redirect('cdb_app:mix_detail', pk=pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ConcreteMixForm(instance=mix)
+    
+    context = {
+        'form': form,
+        'form_title': f'Edit Mix: {mix.mix_code}',
+        'is_edit': True,
+        'mix': mix,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+def delete_mix_view(request, pk):
+    """Delete a concrete mix with permission checks - Admin only."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=pk)
+    
+    # Only allow admins to delete mixes
+    if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
+        messages.error(request, 'Only administrators can delete mixes.')
+        return HttpResponseForbidden('Permission denied: Only administrators can delete mixes.')
+    
+    if request.method == 'POST':
+        # Store the mix code for the success message before deletion
+        mix_code = mix.mix_code or f'ID: {mix.pk}'
+        
+        # Delete the mix from 'cdb' database
+        mix.delete(using='cdb')
+        
+        messages.success(request, f'Mix {mix_code} deleted successfully!')
+        return redirect('cdb_app:mix_list')
+    
+    context = {
+        'mix': mix,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/mix_confirm_delete.html', context)
+
+# --- Mix Component Views --- #
+@login_required
+@contributor_required
+def add_component_view(request, mix_pk):
+    """Add a new mix component to a concrete mix."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    
+    if request.method == 'POST':
+        form = MixComponentForm(request.POST)
+        if form.is_valid():
+            component = form.save(commit=False)
+            component.mix = mix
+            # Save to the 'cdb' database
+            component.save(using='cdb')
+            messages.success(request, 'Material component added successfully!')
+            return redirect('cdb_app:mix_detail', pk=mix_pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = MixComponentForm()
+    
+    context = {
+        'form': form,
+        'form_title': f'Add Component to Mix: {mix.mix_code}',
+        'mix': mix,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+@contributor_required
+def edit_component_view(request, mix_pk, comp_pk):
+    """Edit an existing mix component with permission checks."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    component = get_object_or_404(MixComponent.objects.using('cdb').select_related('material'), pk=comp_pk, mix=mix)
+    
+    if request.method == 'POST':
+        form = MixComponentForm(request.POST, instance=component)
+        if form.is_valid():
+            # Save to the 'cdb' database
+            form.save(using='cdb')
+            messages.success(request, 'Material component updated successfully!')
+            return redirect('cdb_app:mix_detail', pk=mix_pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = MixComponentForm(instance=component)
+    
+    context = {
+        'form': form,
+        'form_title': f'Edit Component: {component.material.specific_name}',
+        'is_edit': True,
+        'mix': mix,
+        'component': component,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+def delete_component_view(request, mix_pk, comp_pk):
+    """Delete a mix component with permission checks - Admin only."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    component = get_object_or_404(MixComponent.objects.using('cdb').select_related('material'), pk=comp_pk, mix=mix)
+    
+    # Only allow admins to delete components
+    if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
+        messages.error(request, 'Only administrators can delete mix components.')
+        return HttpResponseForbidden('Permission denied: Only administrators can delete mix components.')
+    
+    if request.method == 'POST':
+        material_name = component.material.specific_name or f'ID: {component.material.pk}'
+        
+        # Delete the component from 'cdb' database
+        component.delete(using='cdb')
+        
+        messages.success(request, f'Component {material_name} deleted successfully!')
+        return redirect('cdb_app:mix_detail', pk=mix_pk)
+    
+    context = {
+        'mix': mix,
+        'component': component,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/component_confirm_delete.html', context)
+
+# --- Performance Result Views --- #
+@login_required
+@contributor_required
+def add_performance_result_view(request, mix_pk):
+    """Add a new performance result to a concrete mix."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    
+    if request.method == 'POST':
+        form = PerformanceResultForm(request.POST)
+        if form.is_valid():
+            result = form.save(commit=False)
+            result.mix = mix
+            # Save to the 'cdb' database
+            result.save(using='cdb')
+            messages.success(request, 'Performance result added successfully!')
+            return redirect('cdb_app:mix_detail', pk=mix_pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PerformanceResultForm()
+    
+    context = {
+        'form': form,
+        'form_title': f'Add Performance Result to Mix: {mix.mix_code}',
+        'mix': mix,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+@contributor_required
+def edit_performance_result_view(request, mix_pk, perf_pk):
+    """Edit an existing performance result with permission checks."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    result = get_object_or_404(PerformanceResult.objects.using('cdb'), pk=perf_pk, mix=mix)
+    
+    if request.method == 'POST':
+        form = PerformanceResultForm(request.POST, instance=result)
+        if form.is_valid():
+            # Save to the 'cdb' database
+            form.save(using='cdb')
+            messages.success(request, 'Performance result updated successfully!')
+            return redirect('cdb_app:mix_detail', pk=mix_pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PerformanceResultForm(instance=result)
+    
+    context = {
+        'form': form,
+        'form_title': f'Edit Performance Result',
+        'is_edit': True,
+        'mix': mix,
+        'result': result,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+def delete_performance_result_view(request, mix_pk, perf_pk):
+    """Delete a performance result with permission checks - Admin only."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    result = get_object_or_404(PerformanceResult.objects.using('cdb'), pk=perf_pk, mix=mix)
+    
+    # Only allow admins to delete results
+    if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
+        messages.error(request, 'Only administrators can delete performance results.')
+        return HttpResponseForbidden('Permission denied: Only administrators can delete performance results.')
+    
+    if request.method == 'POST':
+        # Delete the result from 'cdb' database
+        result.delete(using='cdb')
+        
+        messages.success(request, 'Performance result deleted successfully!')
+        return redirect('cdb_app:mix_detail', pk=mix_pk)
+    
+    context = {
+        'mix': mix,
+        'result': result,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/result_confirm_delete.html', context)
+
+# --- Bibliographic Reference Views --- #
+@login_required
+@contributor_required
+def add_reference_view(request, mix_pk):
+    """Add a new bibliographic reference to a concrete mix."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    
+    if request.method == 'POST':
+        form = BibliographicReferenceForm(request.POST)
+        if form.is_valid():
+            reference = form.save(commit=False)
+            reference.mix = mix
+            # Save to the 'cdb' database
+            reference.save(using='cdb')
+            messages.success(request, 'Bibliographic reference added successfully!')
+            return redirect('cdb_app:mix_detail', pk=mix_pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = BibliographicReferenceForm()
+    
+    context = {
+        'form': form,
+        'form_title': f'Add Bibliographic Reference to Mix: {mix.mix_code}',
+        'mix': mix,
+        'app_name': 'cdb_app',
+        'is_edit': False
+    }
+    
+    return render(request, 'cdb_app/reference_form.html', context)
+
+@login_required
+@contributor_required
+def edit_reference_view(request, mix_pk, ref_pk):
+    """Edit an existing bibliographic reference with permission checks."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    reference = get_object_or_404(BibliographicReference.objects.using('cdb'), pk=ref_pk, mix=mix)
+    
+    if request.method == 'POST':
+        form = BibliographicReferenceForm(request.POST, instance=reference)
+        if form.is_valid():
+            # Save to the 'cdb' database
+            form.save(using='cdb')
+            messages.success(request, 'Bibliographic reference updated successfully!')
+            return redirect('cdb_app:mix_detail', pk=mix_pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = BibliographicReferenceForm(instance=reference)
+    
+    context = {
+        'form': form,
+        'form_title': f'Edit Bibliographic Reference',
+        'is_edit': True,
+        'mix': mix,
+        'reference': reference,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/reference_form.html', context)
+
+@login_required
+def delete_reference_view(request, mix_pk, ref_pk):
+    """Delete a bibliographic reference with permission checks - Admin only."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    reference = get_object_or_404(BibliographicReference.objects.using('cdb'), pk=ref_pk, mix=mix)
+    
+    # Only allow admins to delete references
+    if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
+        messages.error(request, 'Only administrators can delete bibliographic references.')
+        return HttpResponseForbidden('Permission denied: Only administrators can delete bibliographic references.')
+    
+    if request.method == 'POST':
+        # Delete the reference from 'cdb' database
+        reference.delete(using='cdb')
+        
+        messages.success(request, 'Bibliographic reference deleted successfully!')
+        return redirect('cdb_app:mix_detail', pk=mix_pk)
+    
+    context = {
+        'object_type': 'bibliographic reference',
+        'object_name': reference.title or f'Reference ID: {reference.pk}',
+        'extra_info': f'Citation: {reference.citation_text[:100]}...' if len(reference.citation_text) > 100 else reference.citation_text,
+        'cancel_url': reverse('cdb_app:mix_detail', kwargs={'pk': mix_pk}),
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/delete_confirmation.html', context)
+
+# --- Dataset Views --- #
+@login_required
+def dataset_list_view(request):
+    """Display a list of all datasets in the database."""
+    datasets = Dataset.objects.using('cdb').all().order_by('dataset_name')
+    
+    # Search functionality
+    query = request.GET.get('q')
+    if query:
+        datasets = datasets.filter(dataset_name__icontains=query) | datasets.filter(description__icontains=query)
+    
+    # Pagination
+    paginator = Paginator(datasets, 10)  # 10 datasets per page
+    page_number = request.GET.get('page')
+    try:
+        datasets = paginator.page(page_number)
+    except PageNotAnInteger:
+        datasets = paginator.page(1)
+    except EmptyPage:
+        datasets = paginator.page(paginator.num_pages)
+    
+    context = {
+        'datasets': datasets,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/dataset_list.html', context)
+
+@login_required
+def dataset_detail(request, pk):
+    """Display details of a specific dataset."""
+    dataset = get_object_or_404(Dataset.objects.using('cdb'), pk=pk)
+    
+    # Get mixes in this dataset with pagination
+    mixes = ConcreteMix.objects.using('cdb').filter(dataset=dataset).order_by('mix_code')
+    
+    # Get statistics
+    total_mixes = mixes.count()
+    total_materials = Material.objects.using('cdb').filter(mixcomponent__mix__dataset=dataset).distinct().count()
+    total_results = PerformanceResult.objects.using('cdb').filter(mix__dataset=dataset).count()
+    
+    # Get average compressive strength if available
+    strength_results = PerformanceResult.objects.using('cdb').filter(
+        mix__dataset=dataset, 
+        category__icontains='strength'
+    )
+    strength_avg = strength_results.aggregate(avg_strength=Avg('test_value'))['avg_strength']
+    
+    # Pagination for mixes
+    paginator = Paginator(mixes, 10)  # 10 mixes per page
+    page_number = request.GET.get('page')
+    try:
+        mixes = paginator.page(page_number)
+    except PageNotAnInteger:
+        mixes = paginator.page(1)
+    except EmptyPage:
+        mixes = paginator.page(paginator.num_pages)
+    
+    context = {
+        'dataset': dataset,
+        'mixes': mixes,
+        'total_mixes': total_mixes,
+        'total_materials': total_materials,
+        'total_results': total_results,
+        'strength_avg': strength_avg,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/dataset_detail.html', context)
+
+@login_required
+@contributor_required
+def add_dataset(request):
+    """Add a new dataset to the database."""
+    if request.method == 'POST':
+        form = DatasetForm(request.POST)
+        if form.is_valid():
+            dataset = form.save(commit=False)
+            dataset.created_by = request.user
+            # Save to the 'cdb' database
+            dataset.save(using='cdb')
+            messages.success(request, f'Dataset {dataset.dataset_name} created successfully!')
+            return redirect('cdb_app:dataset_detail', pk=dataset.dataset_id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = DatasetForm()
+    
+    context = {
+        'form': form,
+        'form_title': 'Add Dataset',
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+@contributor_required
+def edit_dataset_view(request, pk):
+    """Edit an existing dataset with permission checks."""
+    dataset = get_object_or_404(Dataset.objects.using('cdb'), pk=pk)
+    
+    if request.method == 'POST':
+        form = DatasetForm(request.POST, instance=dataset)
+        if form.is_valid():
+            # Save to the 'cdb' database
+            form.save(using='cdb')
+            messages.success(request, f'Dataset {dataset.dataset_name} updated successfully!')
+            return redirect('cdb_app:dataset_detail', pk=pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = DatasetForm(instance=dataset)
+    
+    context = {
+        'form': form,
+        'form_title': f'Edit Dataset: {dataset.dataset_name}',
+        'is_edit': True,
+        'dataset': dataset,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/generic_form.html', context)
+
+@login_required
+def delete_dataset_view(request, pk):
+    """Delete a dataset with permission checks - Admin only."""
+    dataset = get_object_or_404(Dataset.objects.using('cdb'), pk=pk)
+    
+    # Only allow admins to delete datasets
+    if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
+        messages.error(request, 'Only administrators can delete datasets.')
+        return HttpResponseForbidden('Permission denied: Only administrators can delete datasets.')
+    
+    # Check if dataset has associated mixes
+    has_mixes = ConcreteMix.objects.using('cdb').filter(dataset=dataset).exists()
+    
+    if request.method == 'POST':
+        # If it has mixes and we're not forcing deletion, show warning
+        if has_mixes and not request.POST.get('confirm_delete_all'):
+            messages.error(request, 'This dataset contains mixes. Please confirm deletion of all associated mixes.')
+            context = {
+                'object_type': 'dataset',
+                'object_name': dataset.dataset_name,
+                'extra_info': f'Warning: This dataset contains {ConcreteMix.objects.using("cdb").filter(dataset=dataset).count()} mixes that will also be deleted.',
+                'cancel_url': reverse('cdb_app:dataset_detail', kwargs={'pk': pk}),
+                'show_force_delete': True,
+                'app_name': 'cdb_app',
+            }
+            return render(request, 'cdb_app/delete_confirmation.html', context)
+        
+        # Delete the dataset from 'cdb' database
+        dataset.delete(using='cdb')
+        
+        messages.success(request, f'Dataset {dataset.dataset_name} deleted successfully!')
+        return redirect('cdb_app:dataset_list')
+    
+    context = {
+        'object_type': 'dataset',
+        'object_name': dataset.dataset_name,
+        'extra_info': f'This will delete all related data.' + (f' Including {ConcreteMix.objects.using("cdb").filter(dataset=dataset).count()} mixes!' if has_mixes else ''),
+        'cancel_url': reverse('cdb_app:dataset_detail', kwargs={'pk': pk}),
+        'show_force_delete': has_mixes,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/delete_confirmation.html', context)
+
+# --- Sustainability Metrics Views --- #
+@login_required
+def sustainability_metrics_view(request, mix_pk):
+    """Display sustainability metrics for a concrete mix."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    
+    # Get sustainability metrics for this mix
+    metrics = SustainabilityMetrics.objects.using('cdb').filter(mix=mix).select_related('unit')
+    
+    # Calculate totals
+    gwp_total = metrics.filter(metric_type__icontains='gwp').aggregate(total=Sum('value'))['total']
+    energy_total = metrics.filter(metric_type__icontains='energy').aggregate(total=Sum('value'))['total']
+    water_total = metrics.filter(metric_type__icontains='water').aggregate(total=Sum('value'))['total']
+    
+    context = {
+        'mix': mix,
+        'metrics': metrics,
+        'gwp_total': gwp_total,
+        'energy_total': energy_total,
+        'water_total': water_total,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/sustainability_metrics.html', context)
+
+@login_required
+@contributor_required
+def add_sustainability_metric_view(request, mix_pk):
+    """Add a new sustainability metric to a concrete mix."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    
+    if request.method == 'POST':
+        form = SustainabilityMetricsForm(request.POST)
+        if form.is_valid():
+            metric = form.save(commit=False)
+            metric.mix = mix
+            # Save to the 'cdb' database
+            metric.save(using='cdb')
+            messages.success(request, 'Sustainability metric added successfully!')
+            return redirect('cdb_app:sustainability_metrics', mix_pk=mix_pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = SustainabilityMetricsForm()
+    
+    context = {
+        'form': form,
+        'form_title': f'Add Sustainability Metric to Mix: {mix.mix_code}',
+        'mix': mix,
+        'app_name': 'cdb_app',
+        'is_edit': False
+    }
+    
+    return render(request, 'cdb_app/sustainability_metric_form.html', context)
+
+@login_required
+@contributor_required
+def edit_sustainability_metric_view(request, mix_pk, metric_pk):
+    """Edit an existing sustainability metric with permission checks."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    metric = get_object_or_404(SustainabilityMetrics.objects.using('cdb'), pk=metric_pk, mix=mix)
+    
+    if request.method == 'POST':
+        form = SustainabilityMetricsForm(request.POST, instance=metric)
+        if form.is_valid():
+            # Save to the 'cdb' database
+            form.save(using='cdb')
+            messages.success(request, 'Sustainability metric updated successfully!')
+            return redirect('cdb_app:sustainability_metrics', mix_pk=mix_pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = SustainabilityMetricsForm(instance=metric)
+    
+    context = {
+        'form': form,
+        'form_title': f'Edit Sustainability Metric',
+        'is_edit': True,
+        'mix': mix,
+        'metric': metric,
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/sustainability_metric_form.html', context)
+
+@login_required
+def delete_sustainability_metric_view(request, mix_pk, metric_pk):
+    """Delete a sustainability metric with permission checks - Admin only."""
+    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    metric = get_object_or_404(SustainabilityMetrics.objects.using('cdb'), pk=metric_pk, mix=mix)
+    
+    # Only allow admins to delete metrics
+    if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
+        messages.error(request, 'Only administrators can delete sustainability metrics.')
+        return HttpResponseForbidden('Permission denied: Only administrators can delete sustainability metrics.')
+    
+    if request.method == 'POST':
+        # Delete the metric from 'cdb' database
+        metric.delete(using='cdb')
+        
+        messages.success(request, 'Sustainability metric deleted successfully!')
+        return redirect('cdb_app:sustainability_metrics', mix_pk=mix_pk)
+    
+    context = {
+        'object_type': 'sustainability metric',
+        'object_name': f'{metric.metric_type}: {metric.value} {metric.unit.unit_symbol if metric.unit else ""}',
+        'cancel_url': reverse('cdb_app:sustainability_metrics', kwargs={'mix_pk': mix_pk}),
+        'app_name': 'cdb_app',
+    }
+    
+    return render(request, 'cdb_app/delete_confirmation.html', context)

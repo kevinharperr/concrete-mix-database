@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Bibliographic Reference - CDB{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    {% if is_edit %}
+                        <i class="fas fa-edit"></i> Edit Bibliographic Reference for {{ mix.mix_code }}
+                    {% else %}
+                        <i class="fas fa-plus-circle"></i> Add Bibliographic Reference to {{ mix.mix_code }}
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        {% if is_edit %}
+                            You are editing a bibliographic reference for mix <strong>{{ mix.mix_code }}</strong>.
+                        {% else %}
+                            You are adding a new bibliographic reference to mix <strong>{{ mix.mix_code }}</strong>.
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-flex justify-content-between mt-3">
+                            <div>
+                                {% if is_edit %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Update Reference
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-plus-circle"></i> Add Reference
+                                    </button>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Mix
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if mix.bibliographicreference_set.exists and not is_edit %}
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-list"></i> Current References for {{ mix.mix_code }}
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for ref in mix.bibliographicreference_set.all %}
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ ref.title }}</h6>
+                                        <p class="mb-1 small">{{ ref.citation_text }}</p>
+                                        <small class="text-muted">{{ ref.publication_year|default:"Year not specified" }}</small>
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'cdb_app:edit_reference' mix_pk=mix.pk ref_pk=ref.pk %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'cdb_app:delete_reference' mix_pk=mix.pk ref_pk=ref.pk %}" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

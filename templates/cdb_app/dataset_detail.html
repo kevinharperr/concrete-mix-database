@@ -1,0 +1,176 @@
+{% extends 'cdb_base.html' %}
+{% load static %}
+
+{% block title %}{{ dataset.dataset_name }} - CDB{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Dataset: {{ dataset.dataset_name }}</h1>
+        <div>
+            <a href="{% url 'cdb_app:edit_dataset' pk=dataset.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'cdb_app:delete_dataset' pk=dataset.pk %}" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+        </div>
+    </div>
+    <hr>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-info-circle"></i> Basic Information
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 30%">Dataset ID:</th>
+                            <td>{{ dataset.dataset_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Created Date:</th>
+                            <td>{{ dataset.date_created|date:"F d, Y"|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Creator:</th>
+                            <td>{{ dataset.created_by.get_full_name|default:dataset.created_by.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description:</th>
+                            <td>{{ dataset.description|default:"No description provided"|linebreaks }}</td>
+                        </tr>
+                        <tr>
+                            <th>Source:</th>
+                            <td>{{ dataset.source|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>License:</th>
+                            <td>{{ dataset.license_info|default:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Notes:</th>
+                            <td>{{ dataset.notes|default:"No notes available"|linebreaks }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-chart-bar"></i> Dataset Statistics
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ total_mixes }}</h5>
+                                    <p class="card-text">Concrete Mixes</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ total_materials }}</h5>
+                                    <p class="card-text">Unique Materials</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ total_results }}</h5>
+                                    <p class="card-text">Performance Results</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ strength_avg|default:"N/A" }}</h5>
+                                    <p class="card-text">Avg. Strength (MPa)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-cubes"></i> Mixes in Dataset
+        </div>
+        <div class="card-body p-0">
+            {% if mixes %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Mix ID</th>
+                                <th>Mix Code</th>
+                                <th>W/C Ratio</th>
+                                <th>W/B Ratio</th>
+                                <th>Target Strength</th>
+                                <th>Components</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mix in mixes %}
+                                <tr>
+                                    <td>{{ mix.mix_id }}</td>
+                                    <td>{{ mix.mix_code }}</td>
+                                    <td>{{ mix.w_c_ratio|default_if_none:"-" }}</td>
+                                    <td>{{ mix.w_b_ratio|default_if_none:"-" }}</td>
+                                    <td>{{ mix.target_strength_mpa|default_if_none:"-" }} MPa</td>
+                                    <td>{{ mix.mixcomponent_set.count }}</td>
+                                    <td>
+                                        <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="card-body">
+                    <p class="text-muted">No mixes found in this dataset.</p>
+                    <a href="{% url 'cdb_app:add_mix' %}" class="btn btn-success">
+                        <i class="fas fa-plus-circle"></i> Add Mix to Dataset
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        {% if mixes.has_other_pages %}
+            <div class="card-footer">
+                {% include 'cdb_app/includes/pagination.html' with page_obj=mixes %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="mb-4">
+        <a href="{% url 'cdb_app:dataset_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Datasets
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add charts if needed
+    });
+</script>
+{% endblock %}

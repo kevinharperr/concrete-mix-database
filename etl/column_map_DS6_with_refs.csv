@@ -1,0 +1,45 @@
+source_column,target_table,target_column,extra_kwargs
+reference_no,bibliographic_reference,citation_text,{}
+study_number,concrete_mix,mix_code,{"prefix": "DS6-"}
+mix_number,concrete_mix,notes,{"prefix": "Mix number: "}
+author,bibliographic_reference,author,{}
+year,bibliographic_reference,year,{}
+specimen_code,concrete_mix,notes,{"prefix": "Specimen code: "}
+"Cement (kg/m3)",mix_component,dosage_kg_m3,{"class_code":"CEMENT", "subtype_code":"CEM I", "specific_name":"Ordinary Portland Cement", "is_cementitious":true, "reference_key":"CEMENT"}
+fly_ash_kg_m3,mix_component,dosage_kg_m3,{"class_code":"SCM", "subtype_code":"FA", "specific_name":"Fly Ash", "is_cementitious":true, "reference_key":"FA"}
+ggbfs_kg_m3,mix_component,dosage_kg_m3,{"class_code":"SCM", "subtype_code":"GGBFS", "specific_name":"Ground Granulated Blast Furnace Slag", "is_cementitious":true, "reference_key":"GGBFS"}
+silica_fume_kg_m3,mix_component,dosage_kg_m3,{"class_code":"SCM", "subtype_code":"SF", "specific_name":"Silica Fume", "is_cementitious":true, "reference_key":"SF"}
+metakaolin_kg_m3,mix_component,dosage_kg_m3,{"class_code":"SCM", "subtype_code":"MK", "specific_name":"Metakaolin", "is_cementitious":true, "reference_key":"MK"}
+"NCA (kg/m3)",mix_component,dosage_kg_m3,{"class_code":"AGGR_C", "subtype_code":"NCA", "specific_name":"Natural Coarse Aggregate", "reference_key":"NCA"}
+"RCA (kg/m3)",mix_component,dosage_kg_m3,{"class_code":"AGGR_C", "subtype_code":"RCA", "specific_name":"Recycled Coarse Aggregate", "reference_key":"RCA"}
+sand_kg_m3,mix_component,dosage_kg_m3,{"class_code":"AGGR_F", "subtype_code":"NFA", "specific_name":"Natural Fine Aggregate", "reference_key":"NFA"}
+water_kg_m3,mix_component,dosage_kg_m3,{"class_code":"WATER", "subtype_code":"WATER", "specific_name":"Water", "reference_key":"WATER"}
+sp_dosage_kg_m3,mix_component,dosage_kg_m3,{"class_code":"ADM", "subtype_code":"SP", "specific_name":"Superplasticizer", "reference_key":"SP"}
+w_c_ratio,concrete_mix,w_c_ratio,{}
+
+# Aggregate details with reference keys
+nca_sg,aggregate_detail,bulk_density_kg_m3,{"material_ref_key":"NCA"}
+nca_w_abs_pct,aggregate_detail,water_absorption_pct,{"material_ref_key":"NCA"}
+nca_fineness_modulus,aggregate_detail,fineness_modulus,{"material_ref_key":"NCA"}
+nca_d_upper_mm,aggregate_detail,d_upper_mm,{"material_ref_key":"NCA"}
+nca_d_lower_mm,aggregate_detail,d_lower_mm,{"material_ref_key":"NCA"}
+
+rca_sg,aggregate_detail,bulk_density_kg_m3,{"material_ref_key":"RCA"}
+rca_w_abs_pct,aggregate_detail,water_absorption_pct,{"material_ref_key":"RCA"}
+rca_fineness_modulus,aggregate_detail,fineness_modulus,{"material_ref_key":"RCA"}
+rca_d_upper_mm,aggregate_detail,d_upper_mm,{"material_ref_key":"RCA"}
+rca_d_lower_mm,aggregate_detail,d_lower_mm,{"material_ref_key":"RCA"}
+
+nfa_sg,aggregate_detail,bulk_density_kg_m3,{"material_ref_key":"NFA"}
+nfa_w_abs_pct,aggregate_detail,water_absorption_pct,{"material_ref_key":"NFA"}
+nfa_fineness_modulus,aggregate_detail,fineness_modulus,{"material_ref_key":"NFA"}
+nfa_d_upper_mm,aggregate_detail,d_upper_mm,{"material_ref_key":"NFA"}
+nfa_d_lower_mm,aggregate_detail,d_lower_mm,{"material_ref_key":"NFA"}
+
+# Material properties with reference keys
+nca_crushing_index_pct,material_property,crushing_index_pct,{"property_group":"physical", "material_ref_key":"NCA"}
+rca_crushing_index_pct,material_property,crushing_index_pct,{"property_group":"physical", "material_ref_key":"RCA"}
+
+# Hardened concrete results
+fcm_28d_mpa,performance_result,value_num,{"category":"hardened", "age_days":28}
+rca_replacement_level,concrete_mix,notes,{"prefix": "RCA Replacement Level (%):"}

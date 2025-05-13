@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Material Details: {{ material.name|default:material.material_id }} - Concrete Mix Database{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Material Details: {{ material.name|default:material.material_id }}</h1>
+        <div>
+            {% if can_edit %}
+            <a href="{% url 'concrete_mix_app:edit_material' pk=material.pk %}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-edit me-1"></i> Edit Material
+            </a>
+            {% endif %}
+            {% if is_admin %}
+            <a href="{% url 'concrete_mix_app:delete_material' pk=material.pk %}" class="btn btn-outline-danger">
+                <i class="fas fa-trash-alt me-1"></i> Delete Material
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <hr>
+
+    {# General Info Card #}
+    <div class="card mb-4">
+        <div class="card-header">General Information</div>
+        <div class="card-body">
+            <p><strong>Name:</strong> {{ material.name|default:"N/A" }}</p>
+            <p><strong>Type:</strong> {{ material.material_type|default:"N/A" }}</p>
+            <p><strong>Subtype:</strong> {{ material.subtype|default:"N/A" }}</p>
+            <p><strong>Manufacturer:</strong> {{ material.manufacturer|default:"N/A" }}</p>
+            <p><strong>Standard Reference:</strong> {{ material.standard_reference|default:"N/A" }}</p>
+            <p><strong>Date Added:</strong> {{ material.date_added|date:"Y-m-d"|default:"N/A" }}</p>
+            <p><strong>Source Dataset:</strong> {{ material.source_dataset|default:"N/A" }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Material Properties -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">Material Properties</div>
+                <div class="card-body">
+                    {% if material_properties %}
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Value</th>
+                                    <th>Unit</th>
+                                    <th>Test Method</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for prop in material_properties %}
+                                <tr>
+                                    <td>{{ prop.property_name|default:"N/A" }}</td>
+                                    <td class="text-end">{{ prop.property_value|default:prop.property_text|default:"-" }}</td>
+                                    <td>{{ prop.property_unit|default:"-" }}</td>
+                                    <td>{{ prop.test_method|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted">No specific properties available.</p>
+                    {% endif %}
+                    {# TODO: Add form to add properties? #}
+                </div>
+            </div>
+        </div>
+
+        <!-- Chemical Composition -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">Chemical Composition</div>
+                <div class="card-body">
+                    {% if chemical_compositions %}
+                        {% for comp in chemical_compositions %}
+                            <table class="table table-sm table-borderless mb-2 small">
+                                {% if comp.sio2_pct is not None %}<tr><th>SiO₂:</th><td class="text-end">{{ comp.sio2_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.al2o3_pct is not None %}<tr><th>Al₂O₃:</th><td class="text-end">{{ comp.al2o3_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.fe2o3_pct is not None %}<tr><th>Fe₂O₃:</th><td class="text-end">{{ comp.fe2o3_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.cao_pct is not None %}<tr><th>CaO:</th><td class="text-end">{{ comp.cao_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.mgo_pct is not None %}<tr><th>MgO:</th><td class="text-end">{{ comp.mgo_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.so3_pct is not None %}<tr><th>SO₃:</th><td class="text-end">{{ comp.so3_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.na2o_pct is not None %}<tr><th>Na₂O:</th><td class="text-end">{{ comp.na2o_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.k2o_pct is not None %}<tr><th>K₂O:</th><td class="text-end">{{ comp.k2o_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.tio2_pct is not None %}<tr><th>TiO₂:</th><td class="text-end">{{ comp.tio2_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.p2o5_pct is not None %}<tr><th>P₂O₅:</th><td class="text-end">{{ comp.p2o5_pct|floatformat:2 }}%</td></tr>{% endif %}
+                                {% if comp.loi_pct is not None %}<tr><th>LOI:</th><td class="text-end">{{ comp.loi_pct|floatformat:2 }}%</td></tr>{% endif %}
+                            </table>
+                             {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No chemical composition data available.</p>
+                    {% endif %}
+                     {# TODO: Add form to add composition? #}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mixes Using This Material -->
+    <div class="card mb-4">
+        <div class="card-header">Mixes Using This Material</div>
+        <div class="card-body">
+            {% if mixes_using_material %}
+                <table class="table table-sm table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Mix Code/ID</th>
+                            <th>Qty (kg/m³)</th>
+                            <th>Region</th>
+                            <th>Date Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for comp in mixes_using_material %}
+                        <tr>
+                            <td><a href="{% url 'concrete_mix_app:mix_detail' pk=comp.mix.pk %}">{{ comp.mix.mix_code|default:comp.mix.mix_id }}</a></td>
+                            <td class="text-end">{{ comp.quantity_kg_m3|default_if_none:"-" }}</td>
+                            <td>{{ comp.mix.region|default:"-" }}</td>
+                            <td class="text-center">{{ comp.mix.date_created|date:"Y-m-d"|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted">This material is not currently used in any mixes.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-3 mb-3">
+        <a href="{% url 'concrete_mix_app:material_list' %}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-list me-1"></i> Back to Material List
+        </a>
+        <a href="{% url 'concrete_mix_app:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-tachometer-alt me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+</div>
+{% endblock %}

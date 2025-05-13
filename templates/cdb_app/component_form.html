@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Mix Component - CDB{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    {% if is_edit %}
+                        <i class="fas fa-edit"></i> Edit Component for {{ mix.mix_code }}
+                    {% else %}
+                        <i class="fas fa-plus-circle"></i> Add Component to {{ mix.mix_code }}
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        {% if is_edit %}
+                            You are editing a component for mix <strong>{{ mix.mix_code }}</strong>.
+                        {% else %}
+                            You are adding a new component to mix <strong>{{ mix.mix_code }}</strong>.
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-flex justify-content-between mt-3">
+                            <div>
+                                {% if is_edit %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Update Component
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-plus-circle"></i> Add Component
+                                    </button>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Mix
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if mix.mixcomponent_set.exists and not is_edit %}
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-list"></i> Current Components in {{ mix.mix_code }}
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Type</th>
+                                <th>Dosage (kg/m³)</th>
+                                <th>% of Binder</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comp in mix.mixcomponent_set.all %}
+                                <tr>
+                                    <td>{{ comp.material.specific_name }}</td>
+                                    <td>{{ comp.material.material_class.class_code }} - {{ comp.material.subtype_code }}</td>
+                                    <td>{{ comp.dosage_kg_m3|default_if_none:"-" }}</td>
+                                    <td>{{ comp.dosage_pct_binder|default_if_none:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Any component form-related JavaScript can be added here
+</script>
+{% endblock %}

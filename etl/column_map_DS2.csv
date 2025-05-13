@@ -1,0 +1,16 @@
+source_column,target_table,target_column,extra_kwargs
+Cement Content kg/m^3,mix_component,CEM I,"{""class_code"": ""CEMENT"", ""subtype_code"": ""CEM I"", ""is_cementitious"": true}"
+RCA (kg/m^3),mix_component,RCA,"{""class_code"": ""AGGR_C"", ""subtype_code"": ""RCA""}"
+NCA (kg/m^3),mix_component,NCA,"{""class_code"": ""AGGR_C"", ""subtype_code"": ""NCA""}"
+NFA (kg/m^3),mix_component,NFA,"{""class_code"": ""AGGR_F"", ""subtype_code"": ""NFA""}"
+Eff. W/C ratio,concrete_mix,w_c_ratio,
+Slump mm,performance_result,slump_mm,"{""category"": ""fresh"", ""unit_id"": 8, ""test_method_id"": 3, ""age_days"": 0}"
+Compressive Strength,performance_result,value_num,"{""category"": ""hardened"", ""unit_id"": 6, ""test_method_id"": 2, ""age_column"": null, ""specimen_info_col"": ""Specimen Type [in.]"", ""age_days"": 28}"
+RCA Bulk Density kg/m^3,aggregate_detail,bulk_density_kg_m3,"{""material_type_hint"": ""RCA"", ""unit_id"": 1}"
+NCA Bulk Density kg/m^3,aggregate_detail,bulk_density_kg_m3,"{""material_type_hint"": ""NCA"", ""unit_id"": 1}"
+RCA Agg. Size,aggregate_detail,d_upper_mm,"{""material_type_hint"": ""RCA"", ""unit_id"": 3}"
+NCA Size (mm),aggregate_detail,d_upper_mm,"{""material_type_hint"": ""NCA"", ""unit_id"": 3}"
+RCA Water Absorption [%],aggregate_detail,water_absorption_pct,"{""material_type_hint"": ""RCA"", ""unit_id"": 4}"
+NCA Water Absorption [%],aggregate_detail,water_absorption_pct,"{""material_type_hint"": ""NCA"", ""unit_id"": 4}"
+Year of Publication,bibliographic_reference,year,
+Source,bibliographic_reference,citation_text,
