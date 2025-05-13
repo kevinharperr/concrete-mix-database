@@ -44,36 +44,36 @@ class SustainabilityMetricsSerializer(serializers.ModelSerializer):
 
 # ViewSets
 class MaterialViewSet(viewsets.ModelViewSet):
-    queryset = Material.objects.using('cdb').all()
+    queryset = Material.objects.all()
     serializer_class = MaterialSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class ConcreteMixViewSet(viewsets.ModelViewSet):
-    queryset = ConcreteMix.objects.using('cdb').all()
+    queryset = ConcreteMix.objects.all()
     serializer_class = ConcreteMixSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class MixComponentViewSet(viewsets.ModelViewSet):
-    queryset = MixComponent.objects.using('cdb').all()
+    queryset = MixComponent.objects.all()
     serializer_class = MixComponentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class PerformanceResultViewSet(viewsets.ModelViewSet):
-    queryset = PerformanceResult.objects.using('cdb').all()
+    queryset = PerformanceResult.objects.all()
     serializer_class = PerformanceResultSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class BibliographicReferenceViewSet(viewsets.ModelViewSet):
-    queryset = BibliographicReference.objects.using('cdb').all()
+    queryset = BibliographicReference.objects.all()
     serializer_class = BibliographicReferenceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class DatasetViewSet(viewsets.ModelViewSet):
-    queryset = Dataset.objects.using('cdb').all()
+    queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class SustainabilityMetricsViewSet(viewsets.ModelViewSet):
-    queryset = SustainabilityMetric.objects.using('cdb').all()
+    queryset = SustainabilityMetric.objects.all()
     serializer_class = SustainabilityMetricsSerializer
     permission_classes = [permissions.IsAuthenticated]

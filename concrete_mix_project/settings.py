@@ -96,6 +96,9 @@ DATABASES = {
         'PASSWORD': '264537',
         'HOST': 'localhost',
         'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c search_path=public'
+        }
     }
 }
 

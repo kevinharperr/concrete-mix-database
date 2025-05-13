@@ -9,6 +9,8 @@
 - Fixed JavaScript chart rendering in mix_detail.html
 - Removed obsolete base.html template file with references to retired concrete_mix_app
 - Consolidated database configuration to use single 'cdb' database
+- Fixed schema path issues with PostgreSQL tables in the 'cdb' database
+- Removed explicit database references (.using('cdb')) from views and API for cleaner code
 
 ## [1.0.0] - 2025-05-13
 

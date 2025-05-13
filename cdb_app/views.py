@@ -50,13 +50,13 @@ def contributor_required(view_func):
 def dashboard(request):
     """Dashboard view for the CDB app."""
     # Get counts of various entities
-    mix_count = ConcreteMix.objects.using('cdb').count()
-    material_count = Material.objects.using('cdb').count()
-    dataset_count = Dataset.objects.using('cdb').count()
-    performance_count = PerformanceResult.objects.using('cdb').count()
+    mix_count = ConcreteMix.objects.count()
+    material_count = Material.objects.count()
+    dataset_count = Dataset.objects.count()
+    performance_count = PerformanceResult.objects.count()
     
     # Get recent mixes
-    recent_mixes = ConcreteMix.objects.using('cdb').order_by('-mix_id')[:5]
+    recent_mixes = ConcreteMix.objects.order_by('-mix_id')[:5]
     
     context = {
         'mix_count': mix_count,
@@ -73,10 +73,10 @@ def dashboard(request):
 @login_required
 def material_list_view(request):
     """Display a list of all materials in the database."""
-    materials = Material.objects.using('cdb').select_related('material_class').order_by('material_class', 'subtype_code')
+    materials = Material.objects.select_related('material_class').order_by('material_class', 'subtype_code')
     
     # Get statistics on materials
-    material_class_stats = MaterialClass.objects.using('cdb').annotate(
+    material_class_stats = MaterialClass.objects.annotate(
         material_count=Count('materials')  # Changed from 'material' to 'materials' to match related_name
     ).order_by('class_code')
     
@@ -116,13 +116,13 @@ def add_material(request):
 @login_required
 def material_detail(request, pk):
     """Display details of a specific material."""
-    material = get_object_or_404(Material.objects.using('cdb').select_related('material_class'), pk=pk)
+    material = get_object_or_404(Material.objects.select_related('material_class'), pk=pk)
     
     # Get associated properties
-    properties = MaterialProperty.objects.using('cdb').filter(material=material)
+    properties = MaterialProperty.objects.filter(material=material)
     
     # Get mixes that use this material
-    mix_components = MixComponent.objects.using('cdb').filter(material=material).select_related('mix')
+    mix_components = MixComponent.objects.filter(material=material).select_related('mix')
     
     context = {
         'material': material,
@@ -137,7 +137,7 @@ def material_detail(request, pk):
 @contributor_required
 def edit_material_view(request, pk):
     """Edit an existing material with permission checks."""
-    material = get_object_or_404(Material.objects.using('cdb'), pk=pk)
+    material = get_object_or_404(Material.objects, pk=pk)
     
     if request.method == 'POST':
         form = MaterialForm(request.POST, instance=material)
@@ -164,7 +164,7 @@ def edit_material_view(request, pk):
 @login_required
 def delete_material_view(request, pk):
     """Delete a material with permission checks - Admin only."""
-    material = get_object_or_404(Material.objects.using('cdb'), pk=pk)
+    material = get_object_or_404(Material.objects, pk=pk)
     
     # Only allow admins to delete materials
     if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
@@ -173,7 +173,7 @@ def delete_material_view(request, pk):
     
     if request.method == 'POST':
         # Check if this material is used in any mixes
-        if MixComponent.objects.using('cdb').filter(material=material).exists():
+        if MixComponent.objects.filter(material=material).exists():
             messages.error(request, f'Cannot delete material {material.specific_name} because it is used in concrete mixes.')
             return redirect('cdb_app:material_detail', pk=pk)
         
@@ -198,7 +198,7 @@ def delete_material_view(request, pk):
 def mix_list_view(request):
     """Display a filterable list of mixes, handles sorting and CSV export."""
     # Base queryset
-    queryset = ConcreteMix.objects.using('cdb')
+    queryset = ConcreteMix.objects
     
     # Apply filtering (will implement with django-filter later)
     filtered_qs = queryset
@@ -308,20 +308,20 @@ def add_mix(request):
 @login_required
 def mix_detail(request, pk):
     """Display details of a specific concrete mix."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb').select_related('dataset'), pk=pk)
+    mix = get_object_or_404(ConcreteMix.objects.select_related('dataset'), pk=pk)
     
     # Get mix components
-    components = MixComponent.objects.using('cdb').filter(
+    components = MixComponent.objects.filter(
         mix=mix
     ).select_related('material', 'material__material_class')
     
     # Get performance results
-    performance_results = PerformanceResult.objects.using('cdb').filter(
+    performance_results = PerformanceResult.objects.filter(
         mix=mix
     ).select_related('test_method', 'unit', 'specimen')
     
     # Get reference, if any
-    references = BibliographicReference.objects.using('cdb').filter(pk__in=mix.references.all())
+    references = BibliographicReference.objects.filter(pk__in=mix.references.all())
     
     context = {
         'mix': mix,
@@ -337,7 +337,7 @@ def mix_detail(request, pk):
 @contributor_required
 def edit_mix_view(request, pk):
     """Edit an existing concrete mix with permission checks."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=pk)
+    mix = get_object_or_404(ConcreteMix.objects, pk=pk)
     
     if request.method == 'POST':
         form = ConcreteMixForm(request.POST, instance=mix)
@@ -364,7 +364,7 @@ def edit_mix_view(request, pk):
 @login_required
 def delete_mix_view(request, pk):
     """Delete a concrete mix with permission checks - Admin only."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=pk)
+    mix = get_object_or_404(ConcreteMix.objects, pk=pk)
     
     # Only allow admins to delete mixes
     if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
@@ -393,7 +393,7 @@ def delete_mix_view(request, pk):
 @contributor_required
 def add_component_view(request, mix_pk):
     """Add a new mix component to a concrete mix."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
     
     if request.method == 'POST':
         form = MixComponentForm(request.POST)
@@ -422,8 +422,8 @@ def add_component_view(request, mix_pk):
 @contributor_required
 def edit_component_view(request, mix_pk, comp_pk):
     """Edit an existing mix component with permission checks."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
-    component = get_object_or_404(MixComponent.objects.using('cdb').select_related('material'), pk=comp_pk, mix=mix)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
+    component = get_object_or_404(MixComponent.objects.select_related('material'), pk=comp_pk, mix=mix)
     
     if request.method == 'POST':
         form = MixComponentForm(request.POST, instance=component)
@@ -451,8 +451,8 @@ def edit_component_view(request, mix_pk, comp_pk):
 @login_required
 def delete_component_view(request, mix_pk, comp_pk):
     """Delete a mix component with permission checks - Admin only."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
-    component = get_object_or_404(MixComponent.objects.using('cdb').select_related('material'), pk=comp_pk, mix=mix)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
+    component = get_object_or_404(MixComponent.objects.select_related('material'), pk=comp_pk, mix=mix)
     
     # Only allow admins to delete components
     if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
@@ -481,7 +481,7 @@ def delete_component_view(request, mix_pk, comp_pk):
 @contributor_required
 def add_performance_result_view(request, mix_pk):
     """Add a new performance result to a concrete mix."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
     
     if request.method == 'POST':
         form = PerformanceResultForm(request.POST)
@@ -510,8 +510,8 @@ def add_performance_result_view(request, mix_pk):
 @contributor_required
 def edit_performance_result_view(request, mix_pk, perf_pk):
     """Edit an existing performance result with permission checks."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
-    result = get_object_or_404(PerformanceResult.objects.using('cdb'), pk=perf_pk, mix=mix)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
+    result = get_object_or_404(PerformanceResult.objects, pk=perf_pk, mix=mix)
     
     if request.method == 'POST':
         form = PerformanceResultForm(request.POST, instance=result)
@@ -539,8 +539,8 @@ def edit_performance_result_view(request, mix_pk, perf_pk):
 @login_required
 def delete_performance_result_view(request, mix_pk, perf_pk):
     """Delete a performance result with permission checks - Admin only."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
-    result = get_object_or_404(PerformanceResult.objects.using('cdb'), pk=perf_pk, mix=mix)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
+    result = get_object_or_404(PerformanceResult.objects, pk=perf_pk, mix=mix)
     
     # Only allow admins to delete results
     if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
@@ -567,7 +567,7 @@ def delete_performance_result_view(request, mix_pk, perf_pk):
 @contributor_required
 def add_reference_view(request, mix_pk):
     """Add a new bibliographic reference to a concrete mix."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
     
     if request.method == 'POST':
         form = BibliographicReferenceForm(request.POST)
@@ -597,8 +597,8 @@ def add_reference_view(request, mix_pk):
 @contributor_required
 def edit_reference_view(request, mix_pk, ref_pk):
     """Edit an existing bibliographic reference with permission checks."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
-    reference = get_object_or_404(BibliographicReference.objects.using('cdb'), pk=ref_pk, mix=mix)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
+    reference = get_object_or_404(BibliographicReference.objects, pk=ref_pk, mix=mix)
     
     if request.method == 'POST':
         form = BibliographicReferenceForm(request.POST, instance=reference)
@@ -626,8 +626,8 @@ def edit_reference_view(request, mix_pk, ref_pk):
 @login_required
 def delete_reference_view(request, mix_pk, ref_pk):
     """Delete a bibliographic reference with permission checks - Admin only."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
-    reference = get_object_or_404(BibliographicReference.objects.using('cdb'), pk=ref_pk, mix=mix)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
+    reference = get_object_or_404(BibliographicReference.objects, pk=ref_pk, mix=mix)
     
     # Only allow admins to delete references
     if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
@@ -655,7 +655,7 @@ def delete_reference_view(request, mix_pk, ref_pk):
 @login_required
 def dataset_list_view(request):
     """Display a list of all datasets in the database."""
-    datasets = Dataset.objects.using('cdb').all().order_by('dataset_name')
+    datasets = Dataset.objects.all().order_by('dataset_name')
     
     # Search functionality
     query = request.GET.get('q')
@@ -682,18 +682,18 @@ def dataset_list_view(request):
 @login_required
 def dataset_detail(request, pk):
     """Display details of a specific dataset."""
-    dataset = get_object_or_404(Dataset.objects.using('cdb'), pk=pk)
+    dataset = get_object_or_404(Dataset.objects, pk=pk)
     
     # Get mixes in this dataset with pagination
-    mixes = ConcreteMix.objects.using('cdb').filter(dataset=dataset).order_by('mix_code')
+    mixes = ConcreteMix.objects.filter(dataset=dataset).order_by('mix_code')
     
     # Get statistics
     total_mixes = mixes.count()
-    total_materials = Material.objects.using('cdb').filter(mix_usages__mix__dataset=dataset).distinct().count()
-    total_results = PerformanceResult.objects.using('cdb').filter(mix__dataset=dataset).count()
+    total_materials = Material.objects.filter(mix_usages__mix__dataset=dataset).distinct().count()
+    total_results = PerformanceResult.objects.filter(mix__dataset=dataset).count()
     
     # Get average compressive strength if available
-    strength_results = PerformanceResult.objects.using('cdb').filter(
+    strength_results = PerformanceResult.objects.filter(
         mix__dataset=dataset, 
         category__icontains='strength'
     )
@@ -751,7 +751,7 @@ def add_dataset(request):
 @contributor_required
 def edit_dataset_view(request, pk):
     """Edit an existing dataset with permission checks."""
-    dataset = get_object_or_404(Dataset.objects.using('cdb'), pk=pk)
+    dataset = get_object_or_404(Dataset.objects, pk=pk)
     
     if request.method == 'POST':
         form = DatasetForm(request.POST, instance=dataset)
@@ -778,7 +778,7 @@ def edit_dataset_view(request, pk):
 @login_required
 def delete_dataset_view(request, pk):
     """Delete a dataset with permission checks - Admin only."""
-    dataset = get_object_or_404(Dataset.objects.using('cdb'), pk=pk)
+    dataset = get_object_or_404(Dataset.objects, pk=pk)
     
     # Only allow admins to delete datasets
     if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
@@ -786,7 +786,7 @@ def delete_dataset_view(request, pk):
         return HttpResponseForbidden('Permission denied: Only administrators can delete datasets.')
     
     # Check if dataset has associated mixes
-    has_mixes = ConcreteMix.objects.using('cdb').filter(dataset=dataset).exists()
+    has_mixes = ConcreteMix.objects.filter(dataset=dataset).exists()
     
     if request.method == 'POST':
         # If it has mixes and we're not forcing deletion, show warning
@@ -823,10 +823,10 @@ def delete_dataset_view(request, pk):
 @login_required
 def sustainability_metrics_view(request, mix_pk):
     """Display sustainability metrics for a concrete mix."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
     
     # Get sustainability metrics for this mix
-    metrics = SustainabilityMetrics.objects.using('cdb').filter(mix=mix).select_related('unit')
+    metrics = SustainabilityMetrics.objects.filter(mix=mix).select_related('unit')
     
     # Calculate totals
     gwp_total = metrics.filter(metric_type__icontains='gwp').aggregate(total=Sum('value'))['total']
@@ -848,7 +848,7 @@ def sustainability_metrics_view(request, mix_pk):
 @contributor_required
 def add_sustainability_metric_view(request, mix_pk):
     """Add a new sustainability metric to a concrete mix."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
     
     if request.method == 'POST':
         form = SustainabilityMetricsForm(request.POST)
@@ -878,8 +878,8 @@ def add_sustainability_metric_view(request, mix_pk):
 @contributor_required
 def edit_sustainability_metric_view(request, mix_pk, metric_pk):
     """Edit an existing sustainability metric with permission checks."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
-    metric = get_object_or_404(SustainabilityMetrics.objects.using('cdb'), pk=metric_pk, mix=mix)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
+    metric = get_object_or_404(SustainabilityMetrics.objects, pk=metric_pk, mix=mix)
     
     if request.method == 'POST':
         form = SustainabilityMetricsForm(request.POST, instance=metric)
@@ -907,8 +907,8 @@ def edit_sustainability_metric_view(request, mix_pk, metric_pk):
 @login_required
 def delete_sustainability_metric_view(request, mix_pk, metric_pk):
     """Delete a sustainability metric with permission checks - Admin only."""
-    mix = get_object_or_404(ConcreteMix.objects.using('cdb'), pk=mix_pk)
-    metric = get_object_or_404(SustainabilityMetrics.objects.using('cdb'), pk=metric_pk, mix=mix)
+    mix = get_object_or_404(ConcreteMix.objects, pk=mix_pk)
+    metric = get_object_or_404(SustainabilityMetrics.objects, pk=metric_pk, mix=mix)
     
     # Only allow admins to delete metrics
     if not request.user.is_superuser and not request.user.groups.filter(name='Admins').exists():
