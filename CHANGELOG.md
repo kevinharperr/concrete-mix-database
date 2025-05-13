@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3] - 2025-05-13
+
+### Added
+- Implemented Strength Classification System to categorize mixes according to EN and ASTM standards
+- Added automatic calculation of strength classes based on 28-day compression test results
+- Added display of both reported and calculated strength classifications in mix detail page
+
 ## [1.0.2] - 2025-05-13
 
 ### Added

@@ -44,6 +44,31 @@
                     <input type="number" id="strengthFilter" class="form-control" placeholder="Min strength...">
                 </div>
                 <div class="col-md-2 mb-2">
+                    <label for="strengthClassFilter" class="form-label">Strength Class</label>
+                    <select id="strengthClassFilter" class="form-select">
+                        <option value="">All Classes</option>
+                        <optgroup label="EN Classes">
+                            <option value="EN:C8/10">C8/10</option>
+                            <option value="EN:C12/15">C12/15</option>
+                            <option value="EN:C16/20">C16/20</option>
+                            <option value="EN:C20/25">C20/25</option>
+                            <option value="EN:C25/30">C25/30</option>
+                            <option value="EN:C30/37">C30/37</option>
+                            <option value="EN:C35/45">C35/45</option>
+                            <option value="EN:C40/50">C40/50</option>
+                            <option value="EN:C45/55">C45/55</option>
+                            <option value="EN:C50/60">C50/60</option>
+                        </optgroup>
+                        <optgroup label="ASTM Classes">
+                            <option value="ASTM:2500">2500 psi</option>
+                            <option value="ASTM:3000">3000 psi</option>
+                            <option value="ASTM:4000">4000 psi</option>
+                            <option value="ASTM:5000">5000 psi</option>
+                            <option value="ASTM:6000">6000 psi</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
                     <label for="wbRatioFilter" class="form-label">Max W/B Ratio</label>
                     <input type="number" id="wbRatioFilter" class="form-control" step="0.01" placeholder="Max ratio...">
                 </div>
@@ -188,10 +213,93 @@
 
 {% block extra_js %}
 <script>
-    // Simple client-side filtering functionality (will be enhanced later)
+    // Client-side filtering functionality for concrete mixes
     document.addEventListener('DOMContentLoaded', function() {
-        // This is a placeholder for more sophisticated filtering
-        // that will be implemented with django-filter later
+        // Get filter elements
+        const datasetsFilter = document.getElementById('datasetsFilter');
+        const regionFilter = document.getElementById('regionFilter');
+        const strengthFilter = document.getElementById('strengthFilter');
+        const strengthClassFilter = document.getElementById('strengthClassFilter');
+        const wbRatioFilter = document.getElementById('wbRatioFilter');
+        const applyFiltersButton = document.getElementById('applyFilters');
+        
+        // Populate datasets dropdown
+        const datasets = [];
+        {% for mix in mixes %}
+            if ('{{ mix.dataset.dataset_name }}' && !datasets.includes('{{ mix.dataset.dataset_name }}')) {
+                datasets.push('{{ mix.dataset.dataset_name }}');
+            }
+        {% endfor %}
+        
+        datasets.sort().forEach(dataset => {
+            const option = document.createElement('option');
+            option.value = dataset;
+            option.textContent = dataset;
+            datasetsFilter.appendChild(option);
+        });
+        
+        // Handle filter application
+        applyFiltersButton.addEventListener('click', function() {
+            // Build query string from filters
+            const params = new URLSearchParams(window.location.search);
+            
+            // Keep pagination and sorting params
+            if (!params.has('page')) {
+                params.set('page', '1'); // Reset to first page when filtering
+            }
+            
+            // Set filter params
+            if (datasetsFilter.value) {
+                params.set('dataset', datasetsFilter.value);
+            } else {
+                params.delete('dataset');
+            }
+            
+            if (regionFilter.value) {
+                params.set('region', regionFilter.value);
+            } else {
+                params.delete('region');
+            }
+            
+            if (strengthFilter.value) {
+                params.set('min_strength', strengthFilter.value);
+            } else {
+                params.delete('min_strength');
+            }
+            
+            if (strengthClassFilter.value) {
+                params.set('strength_class', strengthClassFilter.value);
+            } else {
+                params.delete('strength_class');
+            }
+            
+            if (wbRatioFilter.value) {
+                params.set('max_wb', wbRatioFilter.value);
+            } else {
+                params.delete('max_wb');
+            }
+            
+            // Redirect with filters applied
+            window.location.href = window.location.pathname + '?' + params.toString();
+        });
+        
+        // Load current filter values from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('dataset')) {
+            datasetsFilter.value = urlParams.get('dataset');
+        }
+        if (urlParams.has('region')) {
+            regionFilter.value = urlParams.get('region');
+        }
+        if (urlParams.has('min_strength')) {
+            strengthFilter.value = urlParams.get('min_strength');
+        }
+        if (urlParams.has('strength_class')) {
+            strengthClassFilter.value = urlParams.get('strength_class');
+        }
+        if (urlParams.has('max_wb')) {
+            wbRatioFilter.value = urlParams.get('max_wb');
+        }
     });
 </script>
 {% endblock %}

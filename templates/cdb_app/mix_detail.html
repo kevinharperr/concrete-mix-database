@@ -73,6 +73,83 @@
     <!-- Basic Mix Information -->
     <div class="row mb-4">
         <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-award"></i> Strength Classification
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            {% if strength_class_info.reported_classification or strength_class_info.calculated_classification %}
+                                <table class="table table-borderless table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Standard</th>
+                                            <th>Class</th>
+                                            <th>Min Strength</th>
+                                            <th>Classification Method</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if strength_class_info.reported_classification %}
+                                            {% with reported=strength_class_info.reported_classification %}
+                                            <tr>
+                                                <td><span class="badge bg-info">{{ reported.0 }}</span></td>
+                                                <td>{{ reported.1 }}</td>
+                                                <td>{{ reported.2 }} {% if reported.0 == 'EN' %}MPa{% else %}psi{% endif %}</td>
+                                                <td><span class="badge bg-secondary">Reported</span></td>
+                                            </tr>
+                                            {% endwith %}
+                                        {% endif %}
+                                        
+                                        {% if strength_class_info.calculated_classification %}
+                                            {% with calc=strength_class_info.calculated_classification %}
+                                                {% if calc.EN %}
+                                                <tr>
+                                                    <td><span class="badge bg-info">EN</span></td>
+                                                    <td>{{ calc.EN.0 }}</td>
+                                                    <td>{{ calc.EN.1 }} MPa</td>
+                                                    <td><span class="badge bg-warning">Calculated</span></td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if calc.ASTM %}
+                                                <tr>
+                                                    <td><span class="badge bg-info">ASTM</span></td>
+                                                    <td>{{ calc.ASTM.0 }}</td>
+                                                    <td>{{ calc.ASTM.1 }} psi</td>
+                                                    <td><span class="badge bg-warning">Calculated</span></td>
+                                                </tr>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                                
+                                {% if strength_class_info.has_28d_strength %}
+                                <div class="alert alert-info mt-2">
+                                    <small>
+                                        <i class="fas fa-info-circle"></i> 
+                                        Classifications calculated from 28-day compressive strength: 
+                                        <strong>{{ strength_class_info.strength_28d_value }} {{ strength_class_info.strength_28d_unit }}</strong>
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> 
+                                    No strength classification available. A classification requires either:
+                                    <ul>
+                                        <li>A reported strength class (e.g., C25/30)</li>
+                                        <li>A 28-day compressive strength test result</li>
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <i class="fas fa-info-circle"></i> Basic Information

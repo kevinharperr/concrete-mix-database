@@ -459,4 +459,61 @@ class StagingRaw(models.Model):
     def __str__(self):
         return f"Raw data {self.raw_id} from {self.dataset.dataset_name}"
 
+# --- Strength Classification System ---
+
+class StrengthClass(models.Model):
+    """Standardized concrete strength classes based on EN and ASTM standards."""
+    STANDARD_EN = 'EN'
+    STANDARD_ASTM = 'ASTM'
+    STANDARD_CHOICES = [
+        (STANDARD_EN, 'European Standards (EN)'),
+        (STANDARD_ASTM, 'US Standards (ASTM)'),
+    ]
+    
+    class_id = models.AutoField(primary_key=True)
+    standard = models.CharField(max_length=10, choices=STANDARD_CHOICES)
+    class_code = models.CharField(max_length=20, help_text="e.g., C25/30 for EN or 4000 for ASTM")
+    min_strength = models.DecimalField(max_digits=8, decimal_places=2, help_text="Minimum required strength in MPa or psi")
+    max_strength = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Maximum strength for this class (if applicable)")
+    description = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        db_table = "strength_class"
+        verbose_name = "Strength Class"
+        verbose_name_plural = "Strength Classes"
+        unique_together = ('standard', 'class_code')
+        ordering = ['standard', 'min_strength']
+    
+    def __str__(self):
+        return f"{self.get_standard_display()} {self.class_code}"
+
+class MixStrengthClassification(models.Model):
+    """Links a concrete mix to its strength class classification."""
+    CLASSIFICATION_METHOD_REPORTED = 'reported'
+    CLASSIFICATION_METHOD_CALCULATED = 'calculated'
+    CLASSIFICATION_METHOD_MANUAL = 'manual'
+    CLASSIFICATION_METHOD_CHOICES = [
+        (CLASSIFICATION_METHOD_REPORTED, 'Based on Reported Strength Class'),
+        (CLASSIFICATION_METHOD_CALCULATED, 'Calculated from 28-day Strength Results'),
+        (CLASSIFICATION_METHOD_MANUAL, 'Manually Classified'),
+    ]
+    
+    classification_id = models.AutoField(primary_key=True)
+    mix = models.ForeignKey('ConcreteMix', on_delete=models.CASCADE, related_name='strength_classifications')
+    strength_class = models.ForeignKey(StrengthClass, on_delete=models.CASCADE)
+    classification_method = models.CharField(max_length=20, choices=CLASSIFICATION_METHOD_CHOICES)
+    classification_date = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
+    confidence_level = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, 
+                                      help_text="Confidence level (0-100%) for automatically classified mixes")
+    
+    class Meta:
+        db_table = "mix_strength_classification"
+        verbose_name = "Mix Strength Classification"
+        verbose_name_plural = "Mix Strength Classifications"
+        unique_together = ('mix', 'strength_class')
+    
+    def __str__(self):
+        return f"{self.mix.mix_code} - {self.strength_class} ({self.get_classification_method_display()})"
+
 # Removed duplicate SustainabilityMetrics model - using SustainabilityMetric (singular) instead

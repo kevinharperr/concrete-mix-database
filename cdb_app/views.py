@@ -197,31 +197,90 @@ def delete_material_view(request, pk):
 @login_required
 def mix_list_view(request):
     """Display a filterable list of mixes, handles sorting and CSV export."""
-    # Base queryset
-    queryset = ConcreteMix.objects
+    # Get all mixes with prefetched components and dataset for efficiency
+    mixes = ConcreteMix.objects.select_related('dataset').all()
     
-    # Apply filtering (will implement with django-filter later)
-    filtered_qs = queryset
+    # Apply filters from query parameters
+    filters_applied = False
     
-    # Handle sorting
-    sort_param = request.GET.get('sort', 'mix_code_natural')
+    # Filter by dataset name if provided
+    dataset_filter = request.GET.get('dataset')
+    if dataset_filter:
+        mixes = mixes.filter(dataset__dataset_name=dataset_filter)
+        filters_applied = True
     
-    try:
-        # Annotate for natural sorting (same as in original app)
-        annotated_qs = filtered_qs.annotate(
-            # Extract the trailing number for secondary sorting
-            mix_code_number=RawSQL(
-                "COALESCE(NULLIF(SUBSTRING(mix_code FROM '([0-9]+)$'), ''), '0')::bigint",
-                [],
-                output_field=BigIntegerField()
+    # Filter by region/country if provided
+    region_filter = request.GET.get('region')
+    if region_filter:
+        mixes = mixes.filter(region_country__icontains=region_filter)
+        filters_applied = True
+    
+    # Filter by minimum strength from test results
+    min_strength = request.GET.get('min_strength')
+    if min_strength and min_strength.isdigit():
+        # Join with performance results and filter by 28-day compressive strength
+        mixes = mixes.filter(
+            performance_results__category__icontains='compressive',
+            performance_results__age_days=28,
+            performance_results__value_num__gte=min_strength
+        ).distinct()  # Use distinct to avoid duplicates
+        filters_applied = True
+    
+    # Filter by strength class
+    strength_class = request.GET.get('strength_class')
+    if strength_class:
+        # Parse the strength class filter (e.g., "EN:C25/30" or "ASTM:4000")
+        try:
+            standard, class_code = strength_class.split(':')
+            
+            # Import utility functions for strength classification
+            from .utils import EN_STRENGTH_CLASSES, ASTM_STRENGTH_CLASSES, MPA_TO_PSI, PSI_TO_MPA
+            
+            min_strength_value = None
+            
+            # Find the minimum strength value for the selected class
+            if standard == 'EN':
+                for en_class in EN_STRENGTH_CLASSES:
+                    if en_class[0] == class_code:
+                        min_strength_value = en_class[1]  # MPa value
+                        break
+            elif standard == 'ASTM':
+                for astm_class in ASTM_STRENGTH_CLASSES:
+                    if astm_class[0] == class_code:
+                        # Convert from psi to MPa for database query
+                        min_strength_value = float(astm_class[1]) * float(PSI_TO_MPA)
+                        break
+            
+            if min_strength_value:
+                # Filter by calculated minimum strength
+                mixes = mixes.filter(
+                    performance_results__category__icontains='compressive',
+                    performance_results__age_days=28,
+                    performance_results__value_num__gte=min_strength_value
+                ).distinct()
+                filters_applied = True
+        except (ValueError, IndexError):
+            # If the strength class format is invalid, ignore this filter
+            pass
+    
+    # Filter by maximum water/binder ratio
+    max_wb = request.GET.get('max_wb')
+    if max_wb and max_wb.replace('.', '', 1).isdigit():
+        mixes = mixes.filter(w_b_ratio__lte=max_wb)
+        filters_applied = True
+    
+    # Check for sorting parameter
+    sort_param = request.GET.get('sort', 'mix_id')  # Default to ID sorting
+    
+    # If natural sorting is requested for mix_code
+    if sort_param == 'mix_code_natural':
+        # Use a Raw SQL expression to achieve natural sorting of mix codes
+        # This uses PostgreSQL's ability to extract numeric parts of strings
+        mixes = mixes.annotate(
+            mix_code_numeric=RawSQL(
+                "REGEXP_REPLACE(mix_code, '[^0-9]', '', 'g')::integer", []
             )
-        )
-        # Order by dataset first, then by numeric part
-        can_natural_sort = True
-    except Exception as e:
-        print(f"Warning: Could not annotate for natural sorting: {e}")
-        annotated_qs = filtered_qs  # Fallback if annotation fails
-        can_natural_sort = False
+        ).order_by('mix_code_numeric', 'mix_code')
         # If annotation fails, fallback to mix_id
         if 'natural' in sort_param:
             sort_param = 'mix_id'
@@ -303,9 +362,6 @@ def add_mix(request):
         'app_name': 'cdb_app',
     }
     
-    return render(request, 'cdb_app/generic_form.html', context)
-
-@login_required
 def mix_detail(request, pk):
     """Display details of a specific concrete mix."""
     mix = get_object_or_404(ConcreteMix.objects.select_related('dataset'), pk=pk)
@@ -318,16 +374,70 @@ def mix_detail(request, pk):
     # Get performance results
     performance_results = PerformanceResult.objects.filter(
         mix=mix
-    ).select_related('test_method', 'unit', 'specimen')
+    ).select_related('test_method', 'unit', 'specimen').order_by('category', 'test_method', 'age_days')
     
     # Get reference, if any
     references = BibliographicReference.objects.filter(pk__in=mix.references.all())
+    
+    # Get sustainability metrics if available
+    try:
+        sustainability_metrics = SustainabilityMetric.objects.select_related('unit').filter(mix=mix)
+    except:
+        sustainability_metrics = []
+    
+    # Add total cementitious content calculation
+    cementitious_components = components.filter(is_cementitious=True)
+    total_cementitious = sum(comp.dosage_kg_m3 or 0 for comp in cementitious_components)
+    
+    # Calculate water to cementitious ratio if not provided
+    if not mix.w_b_ratio and total_cementitious > 0:
+        water_components = components.filter(material__material_class__class_code='WATER')
+        total_water = sum(comp.dosage_kg_m3 or 0 for comp in water_components)
+        calculated_wb_ratio = total_water / total_cementitious if total_cementitious > 0 else None
+    else:
+        calculated_wb_ratio = None
+    
+    # Add strength classification information
+    from .utils import classify_strength_by_reported_class, classify_strength_by_test_result
+    
+    # Initialize strength classification data
+    strength_class_info = {
+        'reported_classification': None,
+        'calculated_classification': None,
+        'has_28d_strength': False,
+        'strength_28d_value': None,
+        'strength_28d_unit': 'MPa'
+    }
+    
+    # Check for reported strength class
+    if mix.strength_class:
+        strength_class_info['reported_classification'] = classify_strength_by_reported_class(mix.strength_class)
+    
+    # Look for 28-day compression test results for classification
+    compressive_tests = performance_results.filter(
+        category__icontains='compressive',
+        age_days=28
+    ).order_by('-value_num')  # Get the highest value if multiple tests exist
+    
+    if compressive_tests.exists():
+        strength_28d = compressive_tests.first()
+        strength_class_info['has_28d_strength'] = True
+        strength_class_info['strength_28d_value'] = strength_28d.value_num
+        if strength_28d.unit:
+            strength_class_info['strength_28d_unit'] = strength_28d.unit.unit_symbol
+        
+        # Classify based on test result (assuming MPa, which is standard for concrete testing)
+        strength_class_info['calculated_classification'] = classify_strength_by_test_result(strength_28d.value_num)
     
     context = {
         'mix': mix,
         'components': components,
         'performance_results': performance_results,
         'references': references,
+        'sustainability_metrics': sustainability_metrics,
+        'total_cementitious': total_cementitious,
+        'calculated_wb_ratio': calculated_wb_ratio,
+        'strength_class_info': strength_class_info,
         'app_name': 'cdb_app',
     }
     
