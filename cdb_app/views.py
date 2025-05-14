@@ -235,8 +235,27 @@ def mix_list_view(request):
             performance_results__age_days=28,
             performance_results__value_num__gte=min_strength
         )
-        # Combine the results
-        mixes = mixes_compressive.union(mixes_strength, mixes_hardened).distinct()
+        # Combine the results using Q objects since union().distinct() is not supported
+        from django.db.models import Q
+        # Start with the base queryset again
+        mixes = ConcreteMix.objects.select_related('dataset').all()
+        if filters_applied:
+            # Apply all previous filters again
+            if dataset:
+                mixes = mixes.filter(dataset__dataset_name=dataset)
+            if region:
+                mixes = mixes.filter(region__icontains=region)
+            if max_wb and max_wb.replace('.', '', 1).isdigit():
+                mixes = mixes.filter(w_b_ratio__lte=max_wb)
+            
+        # Now apply the strength filter using Q objects
+        mixes = mixes.filter(
+            Q(performance_results__category__icontains='compressive') | 
+            Q(performance_results__category__icontains='strength') | 
+            Q(performance_results__category__icontains='hardened'),
+            performance_results__age_days=28,
+            performance_results__value_num__gte=min_strength
+        ).distinct()
         filters_applied = True
     
     # Filter by strength class
@@ -281,8 +300,26 @@ def mix_list_view(request):
                     performance_results__age_days=28,
                     performance_results__value_num__gte=min_strength_value
                 )
-                # Combine the results
-                mixes = mixes_compressive.union(mixes_strength, mixes_hardened).distinct()
+                # Combine the results using Q objects since union().distinct() is not supported
+                # Start with the base queryset again
+                mixes = ConcreteMix.objects.select_related('dataset').all()
+                if filters_applied:
+                    # Apply all previous filters again
+                    if dataset:
+                        mixes = mixes.filter(dataset__dataset_name=dataset)
+                    if region:
+                        mixes = mixes.filter(region__icontains=region)
+                    if max_wb and max_wb.replace('.', '', 1).isdigit():
+                        mixes = mixes.filter(w_b_ratio__lte=max_wb)
+            
+                # Now apply the strength filter using Q objects
+                mixes = mixes.filter(
+                    Q(performance_results__category__icontains='compressive') | 
+                    Q(performance_results__category__icontains='strength') | 
+                    Q(performance_results__category__icontains='hardened'),
+                    performance_results__age_days=28,
+                    performance_results__value_num__gte=min_strength_value
+                ).distinct()
                 filters_applied = True
         except (ValueError, IndexError):
             # If the strength class format is invalid, ignore this filter
@@ -373,8 +410,8 @@ def add_mix(request):
         form = ConcreteMixForm(request.POST)
         if form.is_valid():
             mix = form.save(commit=False)
-            # Save to the 'cdb' database
-            mix.save(using='cdb')
+            # Save the mix
+            mix.save()
             messages.success(request, f'Mix {mix.mix_code} created successfully!')
             return redirect('cdb_app:mix_detail', pk=mix.mix_id)
         else:
@@ -387,6 +424,8 @@ def add_mix(request):
         'form_title': 'Add Concrete Mix',
         'app_name': 'cdb_app',
     }
+    
+    return render(request, 'cdb_app/mix_form.html', context)
     
 def mix_detail(request, pk):
     import logging
