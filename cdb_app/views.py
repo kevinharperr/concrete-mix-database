@@ -311,13 +311,14 @@ def mix_list_view(request):
             sort_param = 'mix_id'
     
     # Determine final ordering
-    if sort_param == 'mix_code_natural' and can_natural_sort:
-        ordered_qs = annotated_qs.order_by('dataset', 'mix_code_number')
-    elif sort_param == '-mix_code_natural' and can_natural_sort:
-        ordered_qs = annotated_qs.order_by('-dataset', '-mix_code_number')
+    # We use 'mixes' variable directly since that is our main queryset
+    if sort_param == 'mix_code_natural':
+        ordered_qs = mixes.order_by('dataset', 'mix_code_numeric', 'mix_code')
+    elif sort_param == '-mix_code_natural':
+        ordered_qs = mixes.order_by('-dataset', '-mix_code_numeric', '-mix_code')
     else:
-        ordered_qs = annotated_qs.order_by('mix_id')
-        if not (sort_param == 'mix_code_natural' and can_natural_sort):
+        ordered_qs = mixes.order_by(sort_param)
+        if not (sort_param == 'mix_code_natural'):
             sort_param = 'mix_id'
     
     # CSV Export
