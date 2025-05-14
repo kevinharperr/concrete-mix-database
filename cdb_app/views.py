@@ -425,7 +425,7 @@ def add_mix(request):
         'app_name': 'cdb_app',
     }
     
-    return render(request, 'cdb_app/mix_form.html', context)
+    return render(request, 'cdb_app/generic_form.html', context)
     
 def mix_detail(request, pk):
     import logging
