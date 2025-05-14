@@ -265,14 +265,24 @@ def mix_list_view(request):
                         break
             
             if min_strength_value:
-                # Filter by calculated minimum strength
-                mixes = mixes.filter(
-                    (models.Q(performance_results__category__icontains='compressive') | 
-                     models.Q(performance_results__category__icontains='strength') | 
-                     models.Q(performance_results__category__icontains='hardened')),
+                # Filter by calculated minimum strength using union to avoid Q objects
+                mixes_compressive = mixes.filter(
+                    performance_results__category__icontains='compressive',
                     performance_results__age_days=28,
                     performance_results__value_num__gte=min_strength_value
-                ).distinct()
+                )
+                mixes_strength = mixes.filter(
+                    performance_results__category__icontains='strength',
+                    performance_results__age_days=28,
+                    performance_results__value_num__gte=min_strength_value
+                )
+                mixes_hardened = mixes.filter(
+                    performance_results__category__icontains='hardened',
+                    performance_results__age_days=28,
+                    performance_results__value_num__gte=min_strength_value
+                )
+                # Combine the results
+                mixes = mixes_compressive.union(mixes_strength, mixes_hardened).distinct()
                 filters_applied = True
         except (ValueError, IndexError):
             # If the strength class format is invalid, ignore this filter
