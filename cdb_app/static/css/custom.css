@@ -1,0 +1,96 @@
+/* Custom styles for Concrete Mix Database */
+
+/* Light mode (default) styles */
+:root {
+    --text-color: #212529;
+    --bg-color: #ffffff;
+    --card-bg: #f8f9fa;
+    --border-color: #dee2e6;
+    --muted-text: #6c757d;
+}
+
+/* Dark mode styles */
+[data-bs-theme="dark"] {
+    --text-color: #f8f9fa;
+    --bg-color: #212529;
+    --card-bg: #343a40;
+    --border-color: #495057;
+    --muted-text: #adb5bd;
+}
+
+/* Basic text and background color adjustments */
+body {
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Card backgrounds */
+.card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* Fix for table text in dark mode */
+[data-bs-theme="dark"] .table {
+    color: var(--text-color);
+}
+
+/* Fix for alerts in dark mode */
+[data-bs-theme="dark"] .alert {
+    color: var(--text-color);
+}
+
+/* Fix for form inputs in dark mode */
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+/* Footer styling */
+.footer {
+    background-color: var(--card-bg) !important;
+}
+
+[data-bs-theme="dark"] .footer .text-muted {
+    color: var(--muted-text) !important;
+}
+
+/* Fix for modal dialogs */
+[data-bs-theme="dark"] .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+/* Theme toggle button styling */
+.theme-toggle {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.theme-toggle:hover {
+    color: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Icons for the theme toggle */
+.theme-toggle .fa-sun {
+    display: none;
+}
+
+.theme-toggle .fa-moon {
+    display: inline-block;
+}
+
+[data-bs-theme="dark"] .theme-toggle .fa-sun {
+    display: inline-block;
+}
+
+[data-bs-theme="dark"] .theme-toggle .fa-moon {
+    display: none;
+}
