@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.0.4] - 2025-05-14
+
+### Added
+- Added Fresh Properties tab to the Performance Results section with dedicated chart and table
+- Enhanced dark mode styling with improved text contrast and visibility
+- Added diagnostic script (check_wb_ratios.py) to analyze water-binder ratio calculations and component breakdowns
+
+### Improved
+- Added additional CSS variables for better dark mode theme consistency
+- Improved table header styling in dark mode for better readability
+- Enhanced alert styling in dark mode with appropriate background and text colors
+- Added specific styling for code blocks, pre elements, and buttons in dark mode
+- Added special styling for Fresh Properties tab elements in dark mode
+- Fixed spacing issues between tab headers and content in Performance Results section
+- Improved water-binder ratio calculation with simplified formula (Water/(Cement+SCMs)) for better consistency
+- Enhanced identification of cementitious materials using material class and subtype information
+
+### Fixed
+- Fixed JavaScript errors in the Fresh Properties chart implementation
+- Improved chart label visibility in dark mode with dedicated color variables
+- Fixed large gaps in Performance tabs by conditionally displaying charts only when data is available
+- Fixed incorrect water-binder ratio calculations by ensuring proper recognition of all SCM types (CFA, FA-B, etc.)
+- Resolved Decimal vs float comparison issues in the water-binder ratio update script
+
 ## [1.0.3] - 2025-05-14
 
 ### Added

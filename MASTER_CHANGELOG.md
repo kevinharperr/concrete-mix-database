@@ -1,9 +1,35 @@
 # Concrete Mix Database - Master Changelog
 
-## Last Updated: May 7, 2025, 15:52
+## Last Updated: May 14, 2025, 16:09
 
 ## Overview
 This master changelog documents all significant database operations, fixes, and data changes made to the concrete mix database.
+
+---
+
+## Water-Binder Ratio Calculation Update (May 14, 2025, 16:09)
+
+### Issues Identified
+- **Inconsistent W/B Ratios**: Several mixes had abnormally high water-binder ratios (>1.0)
+- **SCM Recognition**: Certain SCM types like 'CFA' and 'FA-B' were not being properly recognized as reactive SCMs
+- **Type Mismatches**: Decimal vs float comparison issues causing calculation errors
+- **Calculation Logic**: Original calculation was complex and didn't align with simplified W/B approach
+
+### Actions Taken
+1. **Revised W/B Calculation Logic**: 
+   - Implemented simple Water/(Cement+SCMs) ratio for improved consistency
+   - Updated `update_wb_ratio.py` management command with revised calculation method
+2. **Enhanced Cementitious Material Identification**:
+   - Improved verification of the `is_cementitious` flag for all materials
+   - Added special handling for SCM subtypes ('FA-B', 'CFA', 'SF', 'GGBS')
+3. **Type Handling**: Fixed Decimal vs float comparison issues for reliable calculations
+4. **Diagnostic Tool**: Created `check_wb_ratios.py` diagnostic script for detailed analysis of mix compositions
+
+### Results
+- Successfully standardized W/B ratios across the database
+- Reduced number of mixes with W/B ratio > 0.8 to only 14 (all valid by design)
+- All problematic mixes now have physically reasonable W/B values
+- Created documentation for W/B ratio calculation methodology
 
 ---
 

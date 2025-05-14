@@ -129,7 +129,11 @@
                                 <div class="alert alert-info mt-2">
                                     <small>
                                         <i class="fas fa-info-circle"></i> 
-                                        Classifications calculated from 28-day compressive strength: 
+                                        {% if strength_class_info.strength_test_age == 28 %}
+                                            Classifications calculated from 28-day compressive strength: 
+                                        {% else %}
+                                            Classifications calculated from {{ strength_class_info.strength_test_age }}-day compressive strength: 
+                                        {% endif %}
                                         <strong>{{ strength_class_info.strength_28d_value }} {{ strength_class_info.strength_28d_unit }}</strong>
                                     </small>
                                 </div>
@@ -281,28 +285,26 @@
     <!-- Performance Results Tab -->
     <div class="card mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-chart-line"></i> Performance Results</span>
+            <span><i class="fas fa-chart-bar"></i> Performance Results</span>
             <a href="{% url 'cdb_app:add_performance_result' mix_pk=mix.pk %}" class="btn btn-sm btn-light">
                 <i class="fas fa-plus"></i> Add Result
             </a>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             {% if performance_results %}
-                <ul class="nav nav-tabs" id="performanceTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
-                            All Results
-                        </button>
+            <div class="performance-tabs-container">
+                <ul class="nav nav-tabs" id="performanceTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="all-tab" data-bs-toggle="tab" href="#all" role="tab" aria-controls="all" aria-selected="true">All Results</a>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="strength-tab" data-bs-toggle="tab" data-bs-target="#strength" type="button" role="tab" aria-controls="strength" aria-selected="false">
-                            Strength
-                        </button>
+                    <li class="nav-item">
+                        <a class="nav-link" id="strength-tab" data-bs-toggle="tab" href="#strength" role="tab" aria-controls="strength" aria-selected="false">Strength</a>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="durability-tab" data-bs-toggle="tab" data-bs-target="#durability" type="button" role="tab" aria-controls="durability" aria-selected="false">
-                            Durability
-                        </button>
+                    <li class="nav-item">
+                        <a class="nav-link" id="durability-tab" data-bs-toggle="tab" href="#durability" role="tab" aria-controls="durability" aria-selected="false">Durability</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="fresh-tab" data-bs-toggle="tab" href="#fresh" role="tab" aria-controls="fresh" aria-selected="false">Fresh Properties</a>
                     </li>
                 </ul>
                 <div class="tab-content pt-3" id="performanceTabContent">
@@ -342,12 +344,137 @@
                         </div>
                     </div>
                     <div class="tab-pane fade" id="strength" role="tabpanel" aria-labelledby="strength-tab">
-                        <div id="strengthChartContainer" style="height: 300px;">
+                        {% if has_strength_data %}
+                        <div id="strengthChartContainer" style="height: 250px;" class="mb-3">
                             <canvas id="strengthChart"></canvas>
+                        </div>
+                        {% else %}
+                        <div class="no-chart-space"></div>
+                        {% endif %}
+                        <h5 class="mt-0 mb-2">Strength Test Results</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Test Method</th>
+                                        <th>Age (days)</th>
+                                        <th>Value</th>
+                                        <th>Unit</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for result in performance_results %}
+                                        {% if 'strength' in result.category|lower or 'compressive' in result.category|lower or 'hardened' in result.category|lower %}
+                                            <tr>
+                                                <td>{{ result.category }}</td>
+                                                <td>{{ result.test_method.description|default:"Not specified" }}</td>
+                                                <td>{{ result.age_days|default_if_none:"-" }}</td>
+                                                <td>{{ result.value_num }}</td>
+                                                <td>{{ result.unit.unit_symbol|default:"" }}</td>
+                                                <td>
+                                                    <a href="{% url 'cdb_app:edit_performance_result' mix_pk=mix.pk perf_pk=result.pk %}" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'cdb_app:delete_performance_result' mix_pk=mix.pk perf_pk=result.pk %}" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     <div class="tab-pane fade" id="durability" role="tabpanel" aria-labelledby="durability-tab">
-                        <p class="text-muted">Durability results will be shown here.</p>
+                        {% if has_durability_data %}
+                        <div id="durabilityChartContainer" style="height: 250px;" class="mb-3">
+                            <canvas id="durabilityChart"></canvas>
+                        </div>
+                        {% else %}
+                        <div class="no-chart-space"></div>
+                        {% endif %}
+                        <h5 class="mt-0 mb-2">Durability Test Results</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Test Method</th>
+                                        <th>Age (days)</th>
+                                        <th>Value</th>
+                                        <th>Unit</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for result in performance_results %}
+                                        {% if 'durability' in result.category|lower or 'permeability' in result.category|lower or 'absorption' in result.category|lower or 'chloride' in result.category|lower %}
+                                            <tr>
+                                                <td>{{ result.category }}</td>
+                                                <td>{{ result.test_method.description|default:"Not specified" }}</td>
+                                                <td>{{ result.age_days|default_if_none:"-" }}</td>
+                                                <td>{{ result.value_num }}</td>
+                                                <td>{{ result.unit.unit_symbol|default:"" }}</td>
+                                                <td>
+                                                    <a href="{% url 'cdb_app:edit_performance_result' mix_pk=mix.pk perf_pk=result.pk %}" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'cdb_app:delete_performance_result' mix_pk=mix.pk perf_pk=result.pk %}" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="fresh" role="tabpanel" aria-labelledby="fresh-tab">
+                        {% if has_fresh_data %}
+                        <div id="freshPropertiesChartContainer" style="height: 250px;" class="mb-3">
+                            <canvas id="freshPropertiesChart"></canvas>
+                        </div>
+                        {% else %}
+                        <div class="no-chart-space"></div>
+                        {% endif %}
+                        <h5 class="mt-0 mb-2">Fresh Properties Test Results</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Test Method</th>
+                                        <th>Value</th>
+                                        <th>Unit</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for result in performance_results %}
+                                        {% if 'slump' in result.category|lower or 'flow' in result.category|lower or 'workability' in result.category|lower or 'fresh' in result.category|lower or 'density' in result.category|lower or 'air content' in result.category|lower %}
+                                            <tr>
+                                                <td>{{ result.category }}</td>
+                                                <td>{{ result.test_method.description|default:"Not specified" }}</td>
+                                                <td>{{ result.value_num }}</td>
+                                                <td>{{ result.unit.unit_symbol|default:"" }}</td>
+                                                <td>
+                                                    <a href="{% url 'cdb_app:edit_performance_result' mix_pk=mix.pk perf_pk=result.pk %}" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'cdb_app:delete_performance_result' mix_pk=mix.pk perf_pk=result.pk %}" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             {% else %}
@@ -486,6 +613,137 @@
         
         // Enhanced strength development chart
         {% if performance_results %}
+        // Process fresh properties data
+        const freshData = [];
+        const freshLabels = [];
+        const freshUnits = [];
+        const freshCategories = [];
+        
+        {% for result in performance_results %}
+            {% if 'slump' in result.category|lower or 'flow' in result.category|lower or 'workability' in result.category|lower or 'fresh' in result.category|lower or 'density' in result.category|lower or 'air content' in result.category|lower %}
+                freshData.push({{ result.value_num|default:0 }});
+                freshLabels.push('{{ result.category }}');
+                freshUnits.push('{{ result.unit.unit_symbol|default:"" }}');
+                freshCategories.push('{{ result.category }}');
+            {% endif %}
+        {% endfor %}
+        
+        // Create fresh properties chart if we have data
+        if (freshLabels.length > 0) {
+            const freshPropertiesChart = document.getElementById('freshPropertiesChart');
+            if (freshPropertiesChart) {
+                const freshCtx = freshPropertiesChart.getContext('2d');
+                new Chart(freshCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: freshLabels,
+                        datasets: [{
+                            label: 'Fresh Concrete Properties',
+                            data: freshData,
+                            backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Value'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Property'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const dataIndex = context.dataIndex;
+                                        const value = freshData[dataIndex];
+                                        const unit = freshUnits[dataIndex] || '';
+                                        return `Value: ${value} ${unit}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Process durability results data
+        const durabilityData = [];
+        const durabilityLabels = [];
+        const durabilityUnits = [];
+        const durabilityCategories = [];
+        
+        {% for result in performance_results %}
+            {% if 'durability' in result.category|lower or 'permeability' in result.category|lower or 'absorption' in result.category|lower or 'chloride' in result.category|lower %}
+                durabilityData.push({{ result.value_num|default:0 }});
+                durabilityLabels.push('{{ result.category }} ({{ result.age_days|default:0 }} days)');
+                durabilityUnits.push('{{ result.unit.unit_symbol|default:"" }}');
+                durabilityCategories.push('{{ result.category }}');
+            {% endif %}
+        {% endfor %}
+        
+        if (durabilityLabels.length > 0) {
+            // Create durability chart
+            const durabilityCtx = document.getElementById('durabilityChart').getContext('2d');
+            new Chart(durabilityCtx, {
+                type: 'bar',
+                data: {
+                    labels: durabilityLabels,
+                    datasets: [{
+                        label: 'Durability Tests',
+                        data: durabilityData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Test Category'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const dataIndex = context.dataIndex;
+                                    const value = durabilityData[dataIndex];
+                                    const unit = durabilityUnits[dataIndex] || '';
+                                    return `Value: ${value} ${unit}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
         // Pre-process strength results data
         const strengthData = [
             {% for result in performance_results %}

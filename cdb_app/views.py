@@ -503,6 +503,26 @@ def mix_detail(request, pk):
         # Classify based on test result (assuming MPa, which is standard for concrete testing)
         strength_class_info['calculated_classification'] = classify_strength_by_test_result(strength_28d.value_num)
     
+    # Check if we have different types of data for charts
+    has_strength_data = performance_results.filter(
+        category__icontains='strength').exists() or performance_results.filter(
+        category__icontains='compressive').exists() or performance_results.filter(
+        category__icontains='hardened').exists()
+        
+    has_durability_data = performance_results.filter(
+        category__icontains='durability').exists() or performance_results.filter(
+        category__icontains='permeability').exists() or performance_results.filter(
+        category__icontains='absorption').exists() or performance_results.filter(
+        category__icontains='chloride').exists()
+        
+    has_fresh_data = performance_results.filter(
+        category__icontains='slump').exists() or performance_results.filter(
+        category__icontains='flow').exists() or performance_results.filter(
+        category__icontains='workability').exists() or performance_results.filter(
+        category__icontains='fresh').exists() or performance_results.filter(
+        category__icontains='density').exists() or performance_results.filter(
+        category__icontains='air content').exists()
+    
     context = {
         'mix': mix,
         'components': components,
@@ -512,6 +532,9 @@ def mix_detail(request, pk):
         'total_cementitious': total_cementitious,
         'calculated_wb_ratio': calculated_wb_ratio,
         'strength_class_info': strength_class_info,
+        'has_strength_data': has_strength_data,
+        'has_durability_data': has_durability_data,
+        'has_fresh_data': has_fresh_data,
         'app_name': 'cdb_app',
     }
     
