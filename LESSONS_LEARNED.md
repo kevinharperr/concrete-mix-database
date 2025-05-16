@@ -95,7 +95,7 @@ This document captures key insights, challenges, and solutions discovered during
 
 ### Data Import Best Practices
 
-- **Validation During Import**: Future ETL processes should include validation steps to ensure data integrity during import.
+- **Validation During Import**: Future ETL processes should include validation steps to ensure data integrity during import.(w/c rules, strength rules, w/b rules, k value rules, SCM definition rules, binder definition rules, etc.)
 
 - **Component Verification**: Critical to verify that all mixes include essential components (cement, water, aggregates).
 
