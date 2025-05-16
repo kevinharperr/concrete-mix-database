@@ -140,3 +140,86 @@ This document captures key insights, challenges, and solutions discovered during
 The Concrete Mix Database project has evolved significantly, addressing key challenges in data management, visualization, and analysis. The biggest lesson learned is the critical importance of data validation during the import process to ensure the accuracy of derived calculations like water-binder ratios.
 
 By implementing the recommendations in this document, the CDB application can continue to improve as a valuable tool for concrete mix design and analysis, providing reliable data for both practical applications and research purposes.
+
+## Test Import Sequence Implementation Lessons (16 May 2025 17:32)
+
+During the implementation of the Test Import Sequence for the database refresh process, several critical issues were encountered with the performance results extraction and saving mechanism. These issues provide valuable lessons for future ETL development:
+
+### 1. Column Name Transformation Issues
+
+During data preprocessing, column names were being transformed (e.g., `compressive_strength` to `compressive_strength_MPa`), but the extraction code was only looking for the original column names. This resulted in no performance results being found.
+
+**Solution:** Modified the extraction code to check for multiple possible column name variations by implementing a looping mechanism that tries several likely column names:
+
+```python
+# Check all possible column names for compressive strength
+strength_column = None
+for col_name in ['compressive_strength', 'compressive_strength_MPa', 'compressive_strength_mpa']:
+    if col_name in row and pd.notna(row[col_name]):
+        strength_column = col_name
+        break
+```
+
+### 2. Database Model Field Mismatches
+
+The most critical issue was the assumption that the `PerformanceResult` model had a `property_name` field, which it actually did not. This led to errors when trying to create the performance result objects.
+
+**Lesson:** Always verify the actual model schema against your assumptions. Using Django's introspection capabilities helped identify this issue:
+
+```python
+from django.db import models
+perf_fields = PerformanceResult._meta.get_fields()
+self.logger.debug(f"PerformanceResult fields: {[f.name for f in perf_fields]}")
+```
+
+**Solution:** Modified the code to handle the `property_name` only as a logging attribute rather than trying to save it to the model:
+
+```python
+# Note: property_name is not a field in the model, use it for logging only
+property_name = result_data.get('property_name', 'unknown')
+
+result = PerformanceResult(
+    mix=result_data['mix'],
+    category=result_data['category'],
+    test_method=test_method,
+    # property_name removed here
+    age_days=result_data['age_days'],
+    value_num=result_data['result_value'],
+    unit=unit_record
+)
+
+# Use property_name only for logging
+self.logger.debug(f"Creating PerformanceResult for property: {property_name}")
+```
+
+### 3. Unit Handling Complexities
+
+The `UnitLookup` model used `unit_id` as its primary key rather than the standard `id`, which caused confusion when trying to reference units.
+
+**Lesson:** Don't assume standard Django primary key naming conventions; always check the actual model structure.
+
+**Solution:** Implemented robust unit lookup code that properly queried the database for units by their symbol and referenced them correctly:
+
+```python
+# Direct DB query to avoid confusion with object attributes
+unit_queryset = UnitLookup.objects.filter(unit_symbol=unit_symbol)
+if unit_queryset.exists():
+    unit_record = unit_queryset.first()
+    self.logger.debug(f"Found existing unit: {unit_record.unit_symbol} with ID {unit_record.unit_id}")
+```
+
+### 4. Incomplete Error Reporting
+
+Initial error messages were not providing enough context to diagnose the issues effectively.
+
+**Solution:** Enhanced error logging with full tracebacks and detailed inspection of data structures:
+
+```python
+except Exception as e:
+    self.logger.error(f"Error saving performance result: {str(e)}")
+    # Print the full exception traceback for debugging
+    import traceback
+    self.logger.error(traceback.format_exc())
+```
+
+These lessons demonstrate the importance of thorough testing, proper error handling, and detailed logging when building ETL processes for complex data models. By implementing these solutions, the Test Import Sequence now successfully imports test datasets and correctly extracts and saves performance results, which is a critical part of the Database Refresh process.

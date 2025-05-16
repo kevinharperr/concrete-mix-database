@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.9] - 2025-05-16
+
+### Fixed
+- Fixed TestDatasetImporter to properly extract and save performance results during the database refresh process
+- Added column name transformation handling to support multiple naming formats for test results
+- Fixed unit reference handling in PerformanceResult creation
+- Enhanced error reporting with detailed tracebacks and data inspection capabilities
+- Added proper model field validation to prevent errors when saving performance results
+
+## [1.0.8] - 2025-05-16
+
+### Added
+- Implemented Phase 3: Test Migration - Staging Database Reset:
+  - Created automated staging database reset script
+  - Established clean testing environment for ETL validation
+  - Set up minimal test data while preserving database structure
+  - Activated read-only mode in staging environment for testing
+  - Added database status monitoring and notifications for testing
+
 ## [1.0.7] - 2025-05-16
 
 ### Added
