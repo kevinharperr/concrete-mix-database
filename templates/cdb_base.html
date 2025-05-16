@@ -19,6 +19,24 @@
     <!-- Store the current theme preference in a meta tag -->
     <meta name="color-scheme" content="light dark">
     <meta name="theme-preference" id="theme-preference" content="light">
+    <style>
+        /* Read-only mode indicator styling */
+        .read-only-indicator {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            width: 100%;
+        }
+        
+        /* Dark mode compatibility for read-only indicator */
+        @media (prefers-color-scheme: dark) {
+            .read-only-indicator .alert-warning {
+                background-color: rgba(255, 193, 7, 0.2);
+                border-color: rgba(255, 193, 7, 0.3);
+                color: #ffc107;
+            }
+        }
+    </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -42,6 +60,13 @@
                     <!-- Datasets -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'dataset_list' %}active{% endif %}" href="{% url 'cdb_app:dataset_list' %}">Datasets</a>
+                    </li>
+                    
+                    <!-- Database Status -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'refresh_status' %}active{% endif %}" href="{% url 'refresh_status:status' %}">
+                            <i class="fas fa-database"></i> Database Status
+                        </a>
                     </li>
                     <!-- Data Entry Dropdown -->
                     <li class="nav-item dropdown">
@@ -90,7 +115,13 @@
         </div>
     </nav>
 
+    {% load refresh_status_tags %}
+    {% read_only_indicator %}
+
     <div class="container">
+        {# System notifications for database refresh #}
+        {% include "includes/notification_banner.html" %}
+        
         {% if messages %}
         <div class="messages">
             {% for message in messages %}

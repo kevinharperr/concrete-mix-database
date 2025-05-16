@@ -1,0 +1,360 @@
+{% extends "cdb_base.html" %}
+{% load static %}
+
+{% block title %}Database Refresh Admin - Concrete Mix Database{% endblock %}
+
+{% block extra_head %}
+<style>
+    .form-section {
+        background-color: rgba(0, 0, 0, 0.03);
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .notification-item {
+        border-left: 4px solid #ccc;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+    }
+    .notification-item.info {
+        border-left-color: #0dcaf0;
+    }
+    .notification-item.warning {
+        border-left-color: #ffc107;
+    }
+    .notification-item.danger {
+        border-left-color: #dc3545;
+    }
+    .notification-item.primary {
+        border-left-color: #0d6efd;
+    }
+    .notification-active {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+    .notification-inactive {
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+    .timeline-entry {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+    .timeline-entry.error {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    
+    @media (prefers-color-scheme: dark) {
+        .form-section {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .notification-active {
+            background-color: rgba(25, 135, 84, 0.2);
+        }
+        .notification-inactive {
+            background-color: rgba(108, 117, 125, 0.2);
+        }
+        .timeline-entry.error {
+            background-color: rgba(220, 53, 69, 0.2);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="mb-4">Database Refresh Administration</h1>
+            <div class="alert alert-warning mb-4">
+                <h4 class="alert-heading">Admin Access Only</h4>
+                <p>This page is restricted to database administrators. Changes made here will be visible to all users.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Status Update Form -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Update Status</h5>
+                </div>
+                <div class="card-body">
+                    <form id="status-form" action="{% url 'refresh_status:update_status' %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-section">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="pending" {% if status.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="in_progress" {% if status.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="paused" {% if status.status == 'paused' %}selected{% endif %}>Paused</option>
+                                    <option value="completed" {% if status.status == 'completed' %}selected{% endif %}>Completed</option>
+                                    <option value="error" {% if status.status == 'error' %}selected{% endif %}>Error</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="read_only_mode" class="form-label">Read-Only Mode</label>
+                                <div class="d-flex align-items-center">
+                                    <select class="form-select" id="read_only_mode" name="read_only_mode">
+                                        <option value="off" {% if status.read_only_mode == 'off' %}selected{% endif %}>Off</option>
+                                        <option value="on" {% if status.read_only_mode == 'on' %}selected{% endif %}>On</option>
+                                    </select>
+                                    
+                                    <div class="ms-2">
+                                        <button type="button" id="toggle_readonly_btn" class="btn {% if status.read_only_mode == 'on' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                            <i class="fas {% if status.read_only_mode == 'on' %}fa-lock{% else %}fa-unlock{% endif %} me-1"></i>
+                                            {% if status.read_only_mode == 'on' %}Disable Write Access{% else %}Enable Write Access{% endif %}
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted mt-2">
+                                    When read-only mode is ON, all database modifications will be blocked except for admin actions.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="mb-3">
+                                <label for="current_phase" class="form-label">Current Phase</label>
+                                <input type="text" class="form-control" id="current_phase" name="current_phase" value="{{ status.current_phase }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="current_step" class="form-label">Current Step</label>
+                                <input type="text" class="form-control" id="current_step" name="current_step" value="{{ status.current_step }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="progress_percentage" class="form-label">Progress (%)</label>
+                                <input type="number" class="form-control" id="progress_percentage" name="progress_percentage" min="0" max="100" value="{{ status.progress_percentage }}">
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="mb-3">
+                                <label for="maintenance_message" class="form-label">Maintenance Message</label>
+                                <textarea class="form-control" id="maintenance_message" name="maintenance_message" rows="3">{{ status.maintenance_message }}</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="true" id="log_entry" name="log_entry">
+                                    <label class="form-check-label" for="log_entry">Create log entry for this update</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Log Message (if creating log entry)</label>
+                                <textarea class="form-control" id="message" name="message" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Update Status</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Status -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Current Status</h5>
+                    <span class="badge {% if status.status == 'in_progress' %}bg-primary{% elif status.status == 'error' %}bg-danger{% elif status.status == 'completed' %}bg-success{% elif status.status == 'paused' %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {{ status.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Read-Only Mode:</dt>
+                        <dd class="col-sm-8">
+                            {% if status.read_only_mode == 'on' %}
+                                <span class="badge bg-warning">ON</span>
+                            {% else %}
+                                <span class="badge bg-success">OFF</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Current Phase:</dt>
+                        <dd class="col-sm-8">{{ status.current_phase|default:"Not set" }}</dd>
+
+                        <dt class="col-sm-4">Current Step:</dt>
+                        <dd class="col-sm-8">{{ status.current_step|default:"Not set" }}</dd>
+
+                        <dt class="col-sm-4">Progress:</dt>
+                        <dd class="col-sm-8">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: {{ status.progress_percentage }}%;" aria-valuenow="{{ status.progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ status.progress_percentage }}%
+                                </div>
+                            </div>
+                        </dd>
+
+                        <dt class="col-sm-4">Last Updated:</dt>
+                        <dd class="col-sm-8">{{ status.last_updated }}</dd>
+
+                        {% if status.start_time %}
+                            <dt class="col-sm-4">Started At:</dt>
+                            <dd class="col-sm-8">{{ status.start_time }}</dd>
+                        {% endif %}
+
+                        {% if status.end_time %}
+                            <dt class="col-sm-4">Completed At:</dt>
+                            <dd class="col-sm-8">{{ status.end_time }}</dd>
+                        {% endif %}
+                    </dl>
+
+                    {% if status.maintenance_message %}
+                        <h6>Maintenance Message:</h6>
+                        <div class="p-3 mb-2 bg-light text-dark">{{ status.maintenance_message|linebreaksbr }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Link to create notifications -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <p>Manage notifications that will be shown to users across the site.</p>
+                    <a href="/admin/refresh_status/statusnotification/" class="btn btn-primary">Manage Notifications</a>
+                    
+                    <hr>
+                    
+                    <h6>Active Notifications:</h6>
+                    <div class="notification-list mt-3">
+                        {% for notification in notifications %}
+                            <div class="notification-item {{ notification.notification_type }} {% if notification.is_displayed %}notification-active{% else %}notification-inactive{% endif %}">
+                                <div class="d-flex justify-content-between">
+                                    <h6>{{ notification.title }}</h6>
+                                    <span class="badge bg-{{ notification.notification_type }}">{{ notification.get_notification_type_display }}</span>
+                                </div>
+                                <p class="mb-1">{{ notification.message|truncatechars:100 }}</p>
+                                <small>
+                                    {% if notification.is_displayed %}
+                                        <span class="text-success">Currently displayed</span>
+                                    {% else %}
+                                        <span class="text-muted">Not currently displayed</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% empty %}
+                            <div class="text-muted">No notifications have been created.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Log Entries -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Log Entries</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Phase</th>
+                                    <th>Step</th>
+                                    <th>Status</th>
+                                    <th>Message</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in log_entries %}
+                                <tr class="{% if entry.is_error %}table-danger{% endif %}">
+                                    <td>{{ entry.timestamp }}</td>
+                                    <td>{{ entry.phase }}</td>
+                                    <td>{{ entry.step }}</td>
+                                    <td>{{ entry.status }}</td>
+                                    <td>{{ entry.message|truncatechars:100 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No log entries yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="/admin/refresh_status/refreshlogentry/" class="btn btn-secondary">View All Logs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Handle read-only toggle button
+        $('#toggle_readonly_btn').on('click', function() {
+            const currentValue = $('#read_only_mode').val();
+            const newValue = currentValue === 'on' ? 'off' : 'on';
+            
+            // Update the select value
+            $('#read_only_mode').val(newValue);
+            
+            // Update button appearance
+            if (newValue === 'on') {
+                $(this).removeClass('btn-outline-warning').addClass('btn-warning');
+                $(this).html('<i class="fas fa-lock me-1"></i> Disable Write Access');
+            } else {
+                $(this).removeClass('btn-warning').addClass('btn-outline-warning');
+                $(this).html('<i class="fas fa-unlock me-1"></i> Enable Write Access');
+            }
+            
+            // Auto-submit the form
+            $('#status-form').submit();
+        });
+        
+        // Handle form submission via AJAX
+        $('#status-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if(response.success) {
+                        // Show success message
+                        $('<div class="alert alert-success alert-dismissible fade show" role="alert">')
+                            .text('Status updated successfully.')
+                            .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>')
+                            .prependTo('.container');
+                            
+                        // Refresh the page after a short delay
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        // Show error message
+                        $('<div class="alert alert-danger alert-dismissible fade show" role="alert">')
+                            .text('Error updating status: ' + response.error)
+                            .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>')
+                            .prependTo('.container');
+                    }
+                },
+                error: function(xhr) {
+                    // Show error message
+                    $('<div class="alert alert-danger alert-dismissible fade show" role="alert">')
+                        .text('Error: Could not update status. Please try again.')
+                        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>')
+                        .prependTo('.container');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

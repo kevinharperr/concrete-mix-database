@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.0.7] - 2025-05-16
+
+### Added
+- Enhanced Read-Only Mode functionality for the database refresh:
+  - Added command-line interface via `toggle_readonly` management command
+  - Created visual read-only mode indicator at the top of all pages
+  - Built template tags for checking read-only status in templates
+  - Added detailed logging of all read-only mode status changes
+  - Implemented one-click toggle button in the admin interface
+
+## [1.0.6] - 2025-05-16
+
+### Added
+- Implemented Temporary Notice System for database refresh:
+  - Created notification banner component for site-wide alerts
+  - Added dedicated database status page at `/status/`
+  - Implemented admin control panel for status management
+  - Built detailed logging system for refresh operations
+- Added read-only mode capability to protect data during refresh
+- Created context processor to display notifications across all pages
+- Added database status link to main navigation
+
+### Improved
+- Enhanced base template with notification display area
+- Standardized notification types (info, warning, danger) for consistent UX
+- Added progress visualization with status indicators and progress bars
+
 ## [1.0.5] - 2025-05-16
 
 ### Added

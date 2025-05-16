@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'cdb_app',  # Main database app
+    'refresh_status',  # Database refresh status and notification system
     
     # Third-party apps
     'crispy_forms',
@@ -62,6 +63,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    # Custom middleware
+    'refresh_status.middleware.ReadOnlyModeMiddleware',  # Enforce read-only mode when active
 ]
 
 ROOT_URLCONF = 'concrete_mix_project.urls'
@@ -77,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'refresh_status.context_processors.refresh_notifications',
             ],
         },
     },

@@ -1,0 +1,1193 @@
+{
+  "export_date": "2025-05-16T15:45:02.830886",
+  "users": [
+    {
+      "username": "anilesen",
+      "password": "pbkdf2_sha256$1000000$1TfHOpYKRABLsEEqG2XSKs$GLjp7QztKvQJ+Sa+V7L3M5Wr+0m0CLF+xuJRkQAzw2M=",
+      "email": "anilesen9@gmail.com",
+      "first_name": "",
+      "last_name": "",
+      "is_active": true,
+      "is_staff": true,
+      "is_superuser": true,
+      "date_joined": "2025-04-11T14:31:51.612079+00:00",
+      "last_login": "2025-05-13T11:27:00.669978+00:00",
+      "groups": [],
+      "user_permissions": []
+    }
+  ],
+  "groups": [
+    {
+      "name": "Editors",
+      "permissions": []
+    },
+    {
+      "name": "Admins",
+      "permissions": []
+    },
+    {
+      "name": "Data Contributors",
+      "permissions": []
+    },
+    {
+      "name": "Viewers",
+      "permissions": []
+    }
+  ],
+  "content_types": [
+    {
+      "app_label": "admin",
+      "model": "logentry"
+    },
+    {
+      "app_label": "auth",
+      "model": "permission"
+    },
+    {
+      "app_label": "auth",
+      "model": "group"
+    },
+    {
+      "app_label": "auth",
+      "model": "user"
+    },
+    {
+      "app_label": "contenttypes",
+      "model": "contenttype"
+    },
+    {
+      "app_label": "sessions",
+      "model": "session"
+    },
+    {
+      "app_label": "account",
+      "model": "emailaddress"
+    },
+    {
+      "app_label": "account",
+      "model": "emailconfirmation"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "material"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "bibliographicreference"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "concretemix"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "curingregime"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "dataset"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "materialclass"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "standard"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "unitlookup"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "admixturedetail"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "aggregateconstituent"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "aggregatedetail"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "cementdetail"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "fibredetail"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "scmdetail"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "concretemixreference"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "specimen"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "stagingraw"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "testmethod"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "sustainabilitymetric"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "propertydictionary"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "performanceresult"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "materialproperty"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "columnmap"
+    },
+    {
+      "app_label": "cdb_app",
+      "model": "mixcomponent"
+    }
+  ],
+  "permissions": [
+    {
+      "codename": "add_emailaddress",
+      "name": "Can add email address",
+      "content_type": {
+        "app_label": "account",
+        "model": "emailaddress"
+      }
+    },
+    {
+      "codename": "change_emailaddress",
+      "name": "Can change email address",
+      "content_type": {
+        "app_label": "account",
+        "model": "emailaddress"
+      }
+    },
+    {
+      "codename": "delete_emailaddress",
+      "name": "Can delete email address",
+      "content_type": {
+        "app_label": "account",
+        "model": "emailaddress"
+      }
+    },
+    {
+      "codename": "view_emailaddress",
+      "name": "Can view email address",
+      "content_type": {
+        "app_label": "account",
+        "model": "emailaddress"
+      }
+    },
+    {
+      "codename": "add_emailconfirmation",
+      "name": "Can add email confirmation",
+      "content_type": {
+        "app_label": "account",
+        "model": "emailconfirmation"
+      }
+    },
+    {
+      "codename": "change_emailconfirmation",
+      "name": "Can change email confirmation",
+      "content_type": {
+        "app_label": "account",
+        "model": "emailconfirmation"
+      }
+    },
+    {
+      "codename": "delete_emailconfirmation",
+      "name": "Can delete email confirmation",
+      "content_type": {
+        "app_label": "account",
+        "model": "emailconfirmation"
+      }
+    },
+    {
+      "codename": "view_emailconfirmation",
+      "name": "Can view email confirmation",
+      "content_type": {
+        "app_label": "account",
+        "model": "emailconfirmation"
+      }
+    },
+    {
+      "codename": "add_logentry",
+      "name": "Can add log entry",
+      "content_type": {
+        "app_label": "admin",
+        "model": "logentry"
+      }
+    },
+    {
+      "codename": "change_logentry",
+      "name": "Can change log entry",
+      "content_type": {
+        "app_label": "admin",
+        "model": "logentry"
+      }
+    },
+    {
+      "codename": "delete_logentry",
+      "name": "Can delete log entry",
+      "content_type": {
+        "app_label": "admin",
+        "model": "logentry"
+      }
+    },
+    {
+      "codename": "view_logentry",
+      "name": "Can view log entry",
+      "content_type": {
+        "app_label": "admin",
+        "model": "logentry"
+      }
+    },
+    {
+      "codename": "add_group",
+      "name": "Can add group",
+      "content_type": {
+        "app_label": "auth",
+        "model": "group"
+      }
+    },
+    {
+      "codename": "change_group",
+      "name": "Can change group",
+      "content_type": {
+        "app_label": "auth",
+        "model": "group"
+      }
+    },
+    {
+      "codename": "delete_group",
+      "name": "Can delete group",
+      "content_type": {
+        "app_label": "auth",
+        "model": "group"
+      }
+    },
+    {
+      "codename": "view_group",
+      "name": "Can view group",
+      "content_type": {
+        "app_label": "auth",
+        "model": "group"
+      }
+    },
+    {
+      "codename": "add_permission",
+      "name": "Can add permission",
+      "content_type": {
+        "app_label": "auth",
+        "model": "permission"
+      }
+    },
+    {
+      "codename": "change_permission",
+      "name": "Can change permission",
+      "content_type": {
+        "app_label": "auth",
+        "model": "permission"
+      }
+    },
+    {
+      "codename": "delete_permission",
+      "name": "Can delete permission",
+      "content_type": {
+        "app_label": "auth",
+        "model": "permission"
+      }
+    },
+    {
+      "codename": "view_permission",
+      "name": "Can view permission",
+      "content_type": {
+        "app_label": "auth",
+        "model": "permission"
+      }
+    },
+    {
+      "codename": "add_user",
+      "name": "Can add user",
+      "content_type": {
+        "app_label": "auth",
+        "model": "user"
+      }
+    },
+    {
+      "codename": "change_user",
+      "name": "Can change user",
+      "content_type": {
+        "app_label": "auth",
+        "model": "user"
+      }
+    },
+    {
+      "codename": "delete_user",
+      "name": "Can delete user",
+      "content_type": {
+        "app_label": "auth",
+        "model": "user"
+      }
+    },
+    {
+      "codename": "view_user",
+      "name": "Can view user",
+      "content_type": {
+        "app_label": "auth",
+        "model": "user"
+      }
+    },
+    {
+      "codename": "add_admixturedetail",
+      "name": "Can add Admixture Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "admixturedetail"
+      }
+    },
+    {
+      "codename": "change_admixturedetail",
+      "name": "Can change Admixture Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "admixturedetail"
+      }
+    },
+    {
+      "codename": "delete_admixturedetail",
+      "name": "Can delete Admixture Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "admixturedetail"
+      }
+    },
+    {
+      "codename": "view_admixturedetail",
+      "name": "Can view Admixture Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "admixturedetail"
+      }
+    },
+    {
+      "codename": "add_aggregateconstituent",
+      "name": "Can add Aggregate Constituent",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "aggregateconstituent"
+      }
+    },
+    {
+      "codename": "change_aggregateconstituent",
+      "name": "Can change Aggregate Constituent",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "aggregateconstituent"
+      }
+    },
+    {
+      "codename": "delete_aggregateconstituent",
+      "name": "Can delete Aggregate Constituent",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "aggregateconstituent"
+      }
+    },
+    {
+      "codename": "view_aggregateconstituent",
+      "name": "Can view Aggregate Constituent",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "aggregateconstituent"
+      }
+    },
+    {
+      "codename": "add_aggregatedetail",
+      "name": "Can add Aggregate Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "aggregatedetail"
+      }
+    },
+    {
+      "codename": "change_aggregatedetail",
+      "name": "Can change Aggregate Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "aggregatedetail"
+      }
+    },
+    {
+      "codename": "delete_aggregatedetail",
+      "name": "Can delete Aggregate Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "aggregatedetail"
+      }
+    },
+    {
+      "codename": "view_aggregatedetail",
+      "name": "Can view Aggregate Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "aggregatedetail"
+      }
+    },
+    {
+      "codename": "add_bibliographicreference",
+      "name": "Can add Bibliographic Reference",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "bibliographicreference"
+      }
+    },
+    {
+      "codename": "change_bibliographicreference",
+      "name": "Can change Bibliographic Reference",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "bibliographicreference"
+      }
+    },
+    {
+      "codename": "delete_bibliographicreference",
+      "name": "Can delete Bibliographic Reference",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "bibliographicreference"
+      }
+    },
+    {
+      "codename": "view_bibliographicreference",
+      "name": "Can view Bibliographic Reference",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "bibliographicreference"
+      }
+    },
+    {
+      "codename": "add_cementdetail",
+      "name": "Can add Cement Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "cementdetail"
+      }
+    },
+    {
+      "codename": "change_cementdetail",
+      "name": "Can change Cement Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "cementdetail"
+      }
+    },
+    {
+      "codename": "delete_cementdetail",
+      "name": "Can delete Cement Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "cementdetail"
+      }
+    },
+    {
+      "codename": "view_cementdetail",
+      "name": "Can view Cement Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "cementdetail"
+      }
+    },
+    {
+      "codename": "add_columnmap",
+      "name": "Can add Column Map",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "columnmap"
+      }
+    },
+    {
+      "codename": "change_columnmap",
+      "name": "Can change Column Map",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "columnmap"
+      }
+    },
+    {
+      "codename": "delete_columnmap",
+      "name": "Can delete Column Map",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "columnmap"
+      }
+    },
+    {
+      "codename": "view_columnmap",
+      "name": "Can view Column Map",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "columnmap"
+      }
+    },
+    {
+      "codename": "add_concretemix",
+      "name": "Can add Concrete Mix",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "concretemix"
+      }
+    },
+    {
+      "codename": "change_concretemix",
+      "name": "Can change Concrete Mix",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "concretemix"
+      }
+    },
+    {
+      "codename": "delete_concretemix",
+      "name": "Can delete Concrete Mix",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "concretemix"
+      }
+    },
+    {
+      "codename": "view_concretemix",
+      "name": "Can view Concrete Mix",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "concretemix"
+      }
+    },
+    {
+      "codename": "add_concretemixreference",
+      "name": "Can add Mix Reference Link",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "concretemixreference"
+      }
+    },
+    {
+      "codename": "change_concretemixreference",
+      "name": "Can change Mix Reference Link",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "concretemixreference"
+      }
+    },
+    {
+      "codename": "delete_concretemixreference",
+      "name": "Can delete Mix Reference Link",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "concretemixreference"
+      }
+    },
+    {
+      "codename": "view_concretemixreference",
+      "name": "Can view Mix Reference Link",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "concretemixreference"
+      }
+    },
+    {
+      "codename": "add_curingregime",
+      "name": "Can add Curing Regime",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "curingregime"
+      }
+    },
+    {
+      "codename": "change_curingregime",
+      "name": "Can change Curing Regime",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "curingregime"
+      }
+    },
+    {
+      "codename": "delete_curingregime",
+      "name": "Can delete Curing Regime",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "curingregime"
+      }
+    },
+    {
+      "codename": "view_curingregime",
+      "name": "Can view Curing Regime",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "curingregime"
+      }
+    },
+    {
+      "codename": "add_dataset",
+      "name": "Can add Dataset",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "dataset"
+      }
+    },
+    {
+      "codename": "change_dataset",
+      "name": "Can change Dataset",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "dataset"
+      }
+    },
+    {
+      "codename": "delete_dataset",
+      "name": "Can delete Dataset",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "dataset"
+      }
+    },
+    {
+      "codename": "view_dataset",
+      "name": "Can view Dataset",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "dataset"
+      }
+    },
+    {
+      "codename": "add_fibredetail",
+      "name": "Can add Fibre Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "fibredetail"
+      }
+    },
+    {
+      "codename": "change_fibredetail",
+      "name": "Can change Fibre Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "fibredetail"
+      }
+    },
+    {
+      "codename": "delete_fibredetail",
+      "name": "Can delete Fibre Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "fibredetail"
+      }
+    },
+    {
+      "codename": "view_fibredetail",
+      "name": "Can view Fibre Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "fibredetail"
+      }
+    },
+    {
+      "codename": "add_material",
+      "name": "Can add Material",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "material"
+      }
+    },
+    {
+      "codename": "change_material",
+      "name": "Can change Material",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "material"
+      }
+    },
+    {
+      "codename": "delete_material",
+      "name": "Can delete Material",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "material"
+      }
+    },
+    {
+      "codename": "view_material",
+      "name": "Can view Material",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "material"
+      }
+    },
+    {
+      "codename": "add_materialclass",
+      "name": "Can add Material Class",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "materialclass"
+      }
+    },
+    {
+      "codename": "change_materialclass",
+      "name": "Can change Material Class",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "materialclass"
+      }
+    },
+    {
+      "codename": "delete_materialclass",
+      "name": "Can delete Material Class",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "materialclass"
+      }
+    },
+    {
+      "codename": "view_materialclass",
+      "name": "Can view Material Class",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "materialclass"
+      }
+    },
+    {
+      "codename": "add_materialproperty",
+      "name": "Can add Material Property",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "materialproperty"
+      }
+    },
+    {
+      "codename": "change_materialproperty",
+      "name": "Can change Material Property",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "materialproperty"
+      }
+    },
+    {
+      "codename": "delete_materialproperty",
+      "name": "Can delete Material Property",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "materialproperty"
+      }
+    },
+    {
+      "codename": "view_materialproperty",
+      "name": "Can view Material Property",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "materialproperty"
+      }
+    },
+    {
+      "codename": "add_mixcomponent",
+      "name": "Can add Mix Component",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "mixcomponent"
+      }
+    },
+    {
+      "codename": "change_mixcomponent",
+      "name": "Can change Mix Component",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "mixcomponent"
+      }
+    },
+    {
+      "codename": "delete_mixcomponent",
+      "name": "Can delete Mix Component",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "mixcomponent"
+      }
+    },
+    {
+      "codename": "view_mixcomponent",
+      "name": "Can view Mix Component",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "mixcomponent"
+      }
+    },
+    {
+      "codename": "add_performanceresult",
+      "name": "Can add Performance Result",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "performanceresult"
+      }
+    },
+    {
+      "codename": "change_performanceresult",
+      "name": "Can change Performance Result",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "performanceresult"
+      }
+    },
+    {
+      "codename": "delete_performanceresult",
+      "name": "Can delete Performance Result",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "performanceresult"
+      }
+    },
+    {
+      "codename": "view_performanceresult",
+      "name": "Can view Performance Result",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "performanceresult"
+      }
+    },
+    {
+      "codename": "add_propertydictionary",
+      "name": "Can add Property Definition",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "propertydictionary"
+      }
+    },
+    {
+      "codename": "change_propertydictionary",
+      "name": "Can change Property Definition",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "propertydictionary"
+      }
+    },
+    {
+      "codename": "delete_propertydictionary",
+      "name": "Can delete Property Definition",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "propertydictionary"
+      }
+    },
+    {
+      "codename": "view_propertydictionary",
+      "name": "Can view Property Definition",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "propertydictionary"
+      }
+    },
+    {
+      "codename": "add_scmdetail",
+      "name": "Can add SCM Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "scmdetail"
+      }
+    },
+    {
+      "codename": "change_scmdetail",
+      "name": "Can change SCM Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "scmdetail"
+      }
+    },
+    {
+      "codename": "delete_scmdetail",
+      "name": "Can delete SCM Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "scmdetail"
+      }
+    },
+    {
+      "codename": "view_scmdetail",
+      "name": "Can view SCM Detail",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "scmdetail"
+      }
+    },
+    {
+      "codename": "add_specimen",
+      "name": "Can add Specimen",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "specimen"
+      }
+    },
+    {
+      "codename": "change_specimen",
+      "name": "Can change Specimen",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "specimen"
+      }
+    },
+    {
+      "codename": "delete_specimen",
+      "name": "Can delete Specimen",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "specimen"
+      }
+    },
+    {
+      "codename": "view_specimen",
+      "name": "Can view Specimen",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "specimen"
+      }
+    },
+    {
+      "codename": "add_stagingraw",
+      "name": "Can add Staging Raw Data",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "stagingraw"
+      }
+    },
+    {
+      "codename": "change_stagingraw",
+      "name": "Can change Staging Raw Data",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "stagingraw"
+      }
+    },
+    {
+      "codename": "delete_stagingraw",
+      "name": "Can delete Staging Raw Data",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "stagingraw"
+      }
+    },
+    {
+      "codename": "view_stagingraw",
+      "name": "Can view Staging Raw Data",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "stagingraw"
+      }
+    },
+    {
+      "codename": "add_standard",
+      "name": "Can add Standard",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "standard"
+      }
+    },
+    {
+      "codename": "change_standard",
+      "name": "Can change Standard",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "standard"
+      }
+    },
+    {
+      "codename": "delete_standard",
+      "name": "Can delete Standard",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "standard"
+      }
+    },
+    {
+      "codename": "view_standard",
+      "name": "Can view Standard",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "standard"
+      }
+    },
+    {
+      "codename": "add_sustainabilitymetric",
+      "name": "Can add Sustainability Metric",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "sustainabilitymetric"
+      }
+    },
+    {
+      "codename": "change_sustainabilitymetric",
+      "name": "Can change Sustainability Metric",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "sustainabilitymetric"
+      }
+    },
+    {
+      "codename": "delete_sustainabilitymetric",
+      "name": "Can delete Sustainability Metric",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "sustainabilitymetric"
+      }
+    },
+    {
+      "codename": "view_sustainabilitymetric",
+      "name": "Can view Sustainability Metric",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "sustainabilitymetric"
+      }
+    },
+    {
+      "codename": "add_testmethod",
+      "name": "Can add Test Method",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "testmethod"
+      }
+    },
+    {
+      "codename": "change_testmethod",
+      "name": "Can change Test Method",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "testmethod"
+      }
+    },
+    {
+      "codename": "delete_testmethod",
+      "name": "Can delete Test Method",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "testmethod"
+      }
+    },
+    {
+      "codename": "view_testmethod",
+      "name": "Can view Test Method",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "testmethod"
+      }
+    },
+    {
+      "codename": "add_unitlookup",
+      "name": "Can add Unit",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "unitlookup"
+      }
+    },
+    {
+      "codename": "change_unitlookup",
+      "name": "Can change Unit",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "unitlookup"
+      }
+    },
+    {
+      "codename": "delete_unitlookup",
+      "name": "Can delete Unit",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "unitlookup"
+      }
+    },
+    {
+      "codename": "view_unitlookup",
+      "name": "Can view Unit",
+      "content_type": {
+        "app_label": "cdb_app",
+        "model": "unitlookup"
+      }
+    },
+    {
+      "codename": "add_contenttype",
+      "name": "Can add content type",
+      "content_type": {
+        "app_label": "contenttypes",
+        "model": "contenttype"
+      }
+    },
+    {
+      "codename": "change_contenttype",
+      "name": "Can change content type",
+      "content_type": {
+        "app_label": "contenttypes",
+        "model": "contenttype"
+      }
+    },
+    {
+      "codename": "delete_contenttype",
+      "name": "Can delete content type",
+      "content_type": {
+        "app_label": "contenttypes",
+        "model": "contenttype"
+      }
+    },
+    {
+      "codename": "view_contenttype",
+      "name": "Can view content type",
+      "content_type": {
+        "app_label": "contenttypes",
+        "model": "contenttype"
+      }
+    },
+    {
+      "codename": "add_session",
+      "name": "Can add session",
+      "content_type": {
+        "app_label": "sessions",
+        "model": "session"
+      }
+    },
+    {
+      "codename": "change_session",
+      "name": "Can change session",
+      "content_type": {
+        "app_label": "sessions",
+        "model": "session"
+      }
+    },
+    {
+      "codename": "delete_session",
+      "name": "Can delete session",
+      "content_type": {
+        "app_label": "sessions",
+        "model": "session"
+      }
+    },
+    {
+      "codename": "view_session",
+      "name": "Can view session",
+      "content_type": {
+        "app_label": "sessions",
+        "model": "session"
+      }
+    }
+  ]
+}

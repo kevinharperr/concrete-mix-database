@@ -1,0 +1,11 @@
+{% if is_read_only %}
+<div class="read-only-indicator">
+    <div class="alert alert-warning mb-0 rounded-0 text-center" role="alert">
+        <i class="fas fa-lock me-2"></i>
+        <strong>READ-ONLY MODE</strong> - Database modifications are temporarily disabled.
+        {% if maintenance_message %}
+        <br><small>{{ maintenance_message }}</small>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

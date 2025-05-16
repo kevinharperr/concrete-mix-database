@@ -22,6 +22,9 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),  # Django-allauth URLs
     path('select2/', include('django_select2.urls')),  # Django-select2 URLs
     
+    # Database refresh status URLs
+    path('status/', include('refresh_status.urls', namespace='refresh_status')),
+    
     # CDB app URLs (main application)
     path('', include('cdb_app.urls')),  # Main app URLs
 ]
