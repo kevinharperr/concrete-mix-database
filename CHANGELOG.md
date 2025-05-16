@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.0.5] - 2025-05-16
+
+### Added
+- Created robust ETL framework for database refresh:
+  - `BaseImporter` class with comprehensive validation logic for concrete mixes
+  - `StandardDatasetImporter` for standardized dataset formats
+  - `DatasetValidator` tool for pre-import validation of datasets
+- Implemented material component validation rules:
+  - Water-binder ratio checks (0.25-0.70)
+  - Minimum component requirements (cement, water, aggregate)
+  - Cement content validation (100-600 kg/m³)
+  - Water content validation (100-300 kg/m³)
+- Added detailed logging and statistics collection for import processes
+- Created tooling for staging environment preparation and testing
+
+### Improved
+- Enhanced data validation with customizable thresholds
+- Added detailed validation reporting for data quality assessment
+- Structured the ETL process for better maintainability and extensibility
+
 ## [1.0.4] - 2025-05-14
 
 ### Added
