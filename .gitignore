@@ -55,3 +55,14 @@ venv.bak/
 
 # Project specific
 /static/
+
+# Test artifacts
+PERF_TEST_*.csv
+TEST_*.csv
+*_report.json
+validation_report.json
+performance_report.json
+test_dataset.csv
+
+# Staging backup files
+reset_staging_db.bat
