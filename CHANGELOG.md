@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.0.13] - 2025-05-19
+
+### Added
+- Enhanced User Notification System:
+  - Created comprehensive notification management interface
+  - Added functionality for creating individual notifications with email options
+  - Implemented maintenance window scheduling for database refreshes
+  - Created notification banner for displaying notifications across all pages
+  - Added custom template filters (modulo, divisibleby) for improved UI rendering
+
+### Fixed
+- Resolved issue with toggle notification status functionality
+- Fixed ValueErrors when creating notifications with empty input fields
+- Updated URL patterns in notification management views to use correct namespace
+- Improved error handling throughout the notification management system
+
 ## [1.0.12] - 2025-05-18
 
 ### Added

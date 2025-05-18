@@ -117,6 +117,36 @@ This document captures key insights, challenges, and solutions discovered during
 
 - **Query Optimization**: Improved query performance by using appropriate union() methods instead of inefficient Q objects.
 
+## Notification System Implementation (May 19, 2025)
+
+### Building the User Notification Interface
+
+- **Authentication Considerations**: We temporarily removed authentication checks in the notification management views to facilitate development. Remember to restore these checks for production use to ensure proper security.
+
+- **Empty Input Handling**: When handling form inputs, especially numerical fields like display_order and duration_hours, always implement safe conversions with fallback default values:
+  ```python
+  # Safe conversion example
+  display_order_value = request.POST.get('display_order', '')
+  display_order = int(display_order_value) if display_order_value.strip() else 0
+  ```
+
+- **URL Namespace Management**: After application consolidation, we discovered that all redirect URLs needed to include the proper namespace. Always use reverse() with namespace for redirects:
+  ```python
+  return redirect(reverse('refresh_status:manage_notifications'))
+  ```
+
+- **Custom Template Filters**: For complex UI rendering, custom template filters can greatly simplify templates. We added modulo and divisibleby filters that improved our notification layout:
+  ```python
+  @register.filter
+  def modulo(num, val):
+      return num % val
+  ```
+
+- **Status Toggling API**: When implementing toggle functionality, proper error handling with appropriate HTTP status codes is essential. Return JSON responses with clear success/failure messages:
+  ```python
+  return JsonResponse({'success': True, 'message': 'Notification status updated'})
+  ```
+
 ## Technical Debt and Lessons
 
 ### Data Import Best Practices

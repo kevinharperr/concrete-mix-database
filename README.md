@@ -156,6 +156,13 @@ The project includes a robust performance testing framework designed to evaluate
 
 ## Core Features & Usage
 
+*   **User Notification System:**
+    *   Management Interface: `/status/manage_notifications/`
+    *   Create Notifications: Form integrated in the management interface
+    *   Schedule Maintenance: Dedicated scheduling form for planned database operations
+    *   Toggle Notifications: Quick enable/disable functionality for all notifications
+    *   Email Alerts: Option to send notifications to all active users via email
+
 *   **Authentication:**
     *   Sign up: `/accounts/signup/`
     *   Login: `/accounts/login/`
