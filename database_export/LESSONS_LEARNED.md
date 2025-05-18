@@ -4,7 +4,7 @@
 
 This document captures key insights, challenges, and solutions discovered during the development and refinement of the Concrete Mix Database (CDB) application. It serves as a knowledge repository for future maintenance and development efforts.
 
-*Last Updated: May 18, 2025*
+*Last Updated: 18.05.2025*
 
 ## Database Architecture and Evolution
 
@@ -117,7 +117,7 @@ This document captures key insights, challenges, and solutions discovered during
 
 - **Query Optimization**: Improved query performance by using appropriate union() methods instead of inefficient Q objects.
 
-## Notification System Implementation (May 19, 2025)
+## Notification System Implementation (18.05.2025)
 
 ### Building the User Notification Interface
 

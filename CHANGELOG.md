@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.13] - 2025-05-19
+## [1.0.13] - 18.05.2025
 
 ### Added
 - Enhanced User Notification System:
@@ -16,7 +16,7 @@
 - Updated URL patterns in notification management views to use correct namespace
 - Improved error handling throughout the notification management system
 
-## [1.0.12] - 2025-05-18
+## [1.0.12] - 18.05.2025
 
 ### Added
 - Completed Phase 3: Performance Testing step of Database Refresh Plan:
@@ -33,7 +33,7 @@
 - Fixed component detection issues in test data generation
 - Added safeguards for minimum processing rates to prevent unrealistic estimates
 
-## [1.0.11] - 2025-05-16
+## [1.0.11] - 16.05.2025
 
 ### Added
 - Completed Phase 3: Test Migration - Validation Run:
@@ -49,7 +49,7 @@
 - Added fallback query strategies when primary lookups fail
 - Improved error logging and recovery for validation edge cases
 
-## [1.0.10] - 2025-05-16
+## [1.0.10] - 16.05.2025
 
 ### Added
 - Completed Phase 3: Test Migration - Test Import Sequence:
@@ -65,7 +65,7 @@
 - Enhanced component validation to check for essential materials
 - Improved water-to-binder ratio validation with detailed error reporting
 
-## [1.0.9] - 2025-05-16
+## [1.0.9] - 16.05.2025
 
 ### Fixed
 - Fixed TestDatasetImporter to properly extract and save performance results during the database refresh process
@@ -74,7 +74,7 @@
 - Enhanced error reporting with detailed tracebacks and data inspection capabilities
 - Added proper model field validation to prevent errors when saving performance results
 
-## [1.0.8] - 2025-05-16
+## [1.0.8] - 16.05.2025
 
 ### Added
 - Implemented Phase 3: Test Migration - Staging Database Reset:
@@ -84,7 +84,7 @@
   - Activated read-only mode in staging environment for testing
   - Added database status monitoring and notifications for testing
 
-## [1.0.7] - 2025-05-16
+## [1.0.7] - 16.05.2025
 
 ### Added
 - Enhanced Read-Only Mode functionality for the database refresh:
@@ -94,7 +94,7 @@
   - Added detailed logging of all read-only mode status changes
   - Implemented one-click toggle button in the admin interface
 
-## [1.0.6] - 2025-05-16
+## [1.0.6] - 16.05.2025
 
 ### Added
 - Implemented Temporary Notice System for database refresh:
@@ -111,7 +111,7 @@
 - Standardized notification types (info, warning, danger) for consistent UX
 - Added progress visualization with status indicators and progress bars
 
-## [1.0.5] - 2025-05-16
+## [1.0.5] - 16.05.2025
 
 ### Added
 - Created robust ETL framework for database refresh:
@@ -131,7 +131,7 @@
 - Added detailed validation reporting for data quality assessment
 - Structured the ETL process for better maintainability and extensibility
 
-## [1.0.4] - 2025-05-14
+## [1.0.4] - 15.05.2025
 
 ### Added
 - Added Fresh Properties tab to the Performance Results section with dedicated chart and table
@@ -155,7 +155,7 @@
 - Fixed incorrect water-binder ratio calculations by ensuring proper recognition of all SCM types (CFA, FA-B, etc.)
 - Resolved Decimal vs float comparison issues in the water-binder ratio update script
 
-## [1.0.3] - 2025-05-14
+## [1.0.3] - 14.05.2025
 
 ### Added
 - Implemented Strength Classification System to categorize mixes according to EN and ASTM standards
@@ -167,7 +167,7 @@
 - Fixed multiple NameError issues in strength classification filtering by replacing Q objects with union() method
 - Fixed sorting issues in mix list view
 
-## [1.0.2] - 2025-05-13
+## [1.0.2] - 13.05.2025
 
 ### Added
 - Added dedicated Visualizations tab in the mix detail page
@@ -182,7 +182,7 @@
 - Enhanced user experience with tabbed interface separating mix details from visualizations
 - Fixed chart sizing issues to prevent layout overflow
 
-## [1.0.1] - 2025-05-13
+## [1.0.1] - 13.05.2025
 
 ### Fixed
 - Fixed field name inconsistencies after transition to single-app structure (test_value → value_num, test_age_days → age_days)
@@ -196,7 +196,7 @@
 - Migrated Django system tables to 'cdb' database to ensure proper authentication and session management
 - Cleaned up remaining content types from retired concrete_mix_app to prevent potential conflicts
 
-## [1.0.0] - 2025-05-13
+## [1.0.0] - 13.05.2025
 
 ### Major Changes
 - **Application Architecture**: Retired concrete_mix_app and transitioned to a single application architecture using cdb_app
