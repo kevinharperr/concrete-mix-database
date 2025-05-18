@@ -129,6 +129,31 @@ Follow these steps to set up the project locally:
     *   `cdb_app/`: Templates specific to the concrete database app (dashboard, detail views, forms, list views).
 *   `static/`: Project-level static files (CSS, JavaScript, images) - currently empty, relying on Bootstrap CDN.
 
+## Performance Testing Framework
+
+The project includes a robust performance testing framework designed to evaluate database import performance and identify potential bottlenecks:
+
+* **Components:**
+  * `performance_testing.py`: Main script for generating test datasets and measuring import performance
+  * `PerformanceMetrics` class: Tracks CPU/memory usage, query counts, and execution times
+  * `TestDataGenerator` class: Creates synthetic datasets of configurable sizes
+  * `TestRunner` class: Orchestrates test execution and collects results
+
+* **Features:**
+  * **CSV-based Testing**: Uses CSV as the primary format for compatibility with existing ETL pipelines
+  * **Scalable Testing**: Supports creating datasets of varying sizes to analyze scaling behavior
+  * **Performance Analysis**: Calculates linear/superlinear/sublinear scaling factors
+  * **Resource Monitoring**: Tracks memory usage, query counts, and database operations
+  * **Production Estimates**: Generates estimates for production dataset import times
+
+* **Usage:**
+  ```bash
+  python performance_testing.py --sizes 1 2 5 10 --iterations 3 --output performance_report.json
+  ```
+  * `--sizes`: Multiplier sizes for test datasets (e.g., 1x, 2x, 5x, 10x base size)
+  * `--iterations`: Number of test runs per size for statistical validity
+  * `--output`: Path to save JSON performance report
+
 ## Core Features & Usage
 
 *   **Authentication:**
