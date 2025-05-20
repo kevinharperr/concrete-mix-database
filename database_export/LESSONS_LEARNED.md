@@ -4,7 +4,7 @@
 
 This document captures key insights, challenges, and solutions discovered during the development and refinement of the Concrete Mix Database (CDB) application. It serves as a knowledge repository for future maintenance and development efforts.
 
-*Last Updated: 18.05.2025*
+*Last Updated: 20.05.2025*
 
 ## Database Architecture and Evolution
 
@@ -116,6 +116,32 @@ This document captures key insights, challenges, and solutions discovered during
 - **Conditional Display**: Fixed large gaps in Performance tabs by conditionally displaying charts only when data is available.
 
 - **Query Optimization**: Improved query performance by using appropriate union() methods instead of inefficient Q objects.
+
+## Database Backup and Restore Procedures (20.05.2025)
+
+### Testing Database Backups
+
+- **Separate Test Database**: Created a dedicated test database ('cdb_test_restore') to verify backup integrity without affecting the production environment.
+
+- **Backup Verification Workflow**: Developed a streamlined process for verifying backup files by restoring them to the test database and validating structure and data integrity.
+
+- **PowerShell for PostgreSQL**: Used PowerShell environment variables for seamless PostgreSQL authentication:
+  ```
+  $env:PGPASSWORD='password'; pg_restore -U postgres -d target_db backup_file.backup
+  ```
+
+- **Validation Queries**: Implemented a series of verification queries to ensure crucial tables and data are properly restored:
+  ```
+  $env:PGPASSWORD='password'; psql -U postgres -d target_db -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';"
+  ```
+
+### Best Practices for Database Refreshes
+
+- **Timestamped Backups**: Always use timestamp-based naming for backup files to maintain clear version history.
+
+- **Multiple Backup Verification**: Verify backups on separate test databases before proceeding with any production data refresh.
+
+- **Automated Test Restoration**: Automate the backup verification process to ensure consistent and thorough testing.
 
 ## Notification System Implementation (18.05.2025)
 
@@ -339,6 +365,81 @@ performance_stats = {
     'rows_per_second': stats.get('rows_processed', 0) / max(import_duration, 0.001)
 }
 ```
+
+## Model Field Name Mismatches in Import Scripts (20 May 2025 16:23)
+
+During the implementation of the database refresh process, we encountered several critical issues related to model field name mismatches in the import scripts. These issues provided valuable lessons for maintaining synchronization between models and import code:
+
+### 1. Model Field Evolution Without Import Script Updates
+
+We discovered that over time, model field names had evolved (e.g., `name` → `specific_name`, `code` → `subtype_code`), but the import scripts had not been updated to reflect these changes.
+
+**Lesson:** Always update all import scripts and ETL processes whenever model fields are renamed. Consider using model introspection to dynamically adapt to field changes.
+
+**Solution Example:**
+```python
+# Dynamically check field names at runtime
+from django.db import models
+
+# Check if the model has specific_name or falls back to name
+if hasattr(Material, 'specific_name'):
+    field_name = 'specific_name'
+else:
+    field_name = 'name'
+    
+# Use the verified field name in get_or_create
+material, created = Material.objects.get_or_create(
+    **{field_name: material_name},
+    material_class=material_class,
+    defaults={...}
+)
+```
+
+### 2. Non-Existent Field Usage
+
+Some import code attempted to use fields that didn't exist in the current model definitions, such as trying to set `is_fine_aggregate` on AggregateDetail when the model only had `d_lower_mm` and `d_upper_mm`.
+
+**Lesson:** Before implementing import scripts, always verify the actual model structure to avoid attempting to use non-existent fields.
+
+**Solution Example:**
+```python
+# Print model fields for verification during development
+for field in AggregateDetail._meta.get_fields():
+    print(f"{field.name}: {field.__class__.__name__}")
+    
+# Create aggregate details with the correct fields
+AggregateDetail.objects.get_or_create(
+    material=material,
+    defaults={
+        'd_lower_mm': size_info.get('min_size'),
+        'd_upper_mm': size_info.get('max_size'),
+    }
+)
+```
+
+### 3. Smart Field Value Parsing
+
+We implemented an intelligent approach to derive field values when direct mappings were unavailable, such as extracting size information from aggregate names.
+
+**Example:**
+```python
+# Parse size range from the name, e.g., '0-4mm', '4-10mm', '10-20mm'
+size_range = agg_data['name'].lower()
+d_lower = None
+d_upper = None
+
+if 'fine' in size_range and '0-4' in size_range:
+    d_lower = 0
+    d_upper = 4
+elif '4-10' in size_range:
+    d_lower = 4
+    d_upper = 10
+elif '10-20' in size_range:
+    d_lower = 10
+    d_upper = 20
+```
+
+These lessons have been crucial in successful implementation of the import scripts for the Concrete Mix Database refresh process, ensuring that data is properly mapped to the current database schema.
 
 ## Earlier Test Import Sequence Lessons (16 May 2025 17:32)
 

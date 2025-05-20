@@ -1,9 +1,60 @@
 # Concrete Mix Database - Master Changelog
 
-## Last Updated: 18.05.2025, 21:08
+## Last Updated: 20.05.2025, 16:23
+
+## Phase 4: Production Implementation - Import Script Fixes (20.05.2025, 16:23)
+
+### Issues Addressed
+
+- **Model Field Mismatches**: Various model field name mismatches in import scripts causing failures during the import process
+- **Incompatible Data Storage**: Attempts to store data in non-existent fields
+- **Incorrect References**: References to fields using incorrect names based on model changes
+
+### Technical Notes
+
+- Fixed MaterialClass creation to use proper field names (class_name, class_code)
+- Implemented truncation for class_code to ensure it doesn't exceed maximum length of 8 characters
+- Updated Material model field references from 'name' to 'specific_name' and 'code' to 'subtype_code'
+- Replaced non-existent 'is_fine_aggregate' field in AggregateDetail with proper 'd_lower_mm' and 'd_upper_mm' fields
+- Added logic to parse size ranges from aggregate names (e.g., '0-4mm', '4-10mm') for correct aggregate detail creation
+- Fixed Dataset model field name from 'name' to 'dataset_name' and removed non-existent fields
+- Corrected Standard model field name from 'standard_code' to 'code'
+
+### Results
+
+- Successfully imported reference data (material classes, units, properties)
+- Successfully imported materials (cements, SCMs, aggregates, water, admixtures)
+- Ensured Dataset 1 import is using correct field names and model references
+- Created a robust fixed_test_import.py script that demonstrates the proper field mappings
+
+---
+
+## Phase 3: Test Migration - Database and Notification System Fixes (20.05.2025, 10:08)
 
 ## Overview
 This master changelog documents all significant database operations, fixes, and data changes made to the concrete mix database.
+
+---
+
+## Phase 3: Test Migration - Database and Notification System Fixes (20.05.2025, 10:08)
+
+### Issues Addressed
+- **Database Migration Conflicts**: Fixed issues with unapplied migrations that were blocking proper server operation
+- **Content Type Sequence Issues**: Resolved ID sequence generation problems in critical Django tables
+- **Table Naming Misalignment**: Created mapping between Django model names and actual database tables
+- **Notification URL Errors**: Fixed incorrect URL pattern references in the notification system
+
+### Technical Notes
+- Implemented robust SQL scripts to fix database structure issues without losing data
+- Added proper namespace handling for URL references in email notifications
+- Created database views to map between Django's expected table names and actual tables
+- Fixed issues with the django_content_type and django_migrations tables
+
+### Results
+- Successfully resolved migration conflicts allowing the application to run without errors
+- Fixed maintenance window scheduling functionality in the notification system
+- Improved system reliability with proper database structure
+- Ensured compatibility between Django ORM and the existing database schema
 
 ---
 

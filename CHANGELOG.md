@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.0.15] - 20.05.2025
+
+### Fixed
+
+- Corrected field name mismatches in import scripts:
+  - Updated MaterialClass creation to use proper field names (class_name, class_code)
+  - Fixed Material model field references from 'name' to 'specific_name' and 'code' to 'subtype_code'
+  - Updated AggregateDetail creation to use 'd_lower_mm' and 'd_upper_mm' instead of non-existent 'is_fine_aggregate'
+  - Fixed Dataset model field name from 'name' to 'dataset_name' and removed non-existent fields
+  - Corrected Standard model field name from 'standard_code' to 'code'
+- Implemented truncation for class_code to ensure it doesn't exceed max length of 8 characters
+- Added logic to parse size ranges from aggregate names for proper AggregateDetail creation
+
+## [1.0.14] - 20.05.2025
+
+### Added
+- Implemented complete backup verification workflow
+- Created automated test restore process using separate test database
+- Added documentation on proper database restoration procedures
+
+### Fixed
+- Resolved database migration conflicts by properly registering content types and fixing table structures
+- Fixed issue with maintenance window scheduling in the notification system
+- Added proper URL namespace handling in notification email links
+- Created database views to ensure compatibility between Django models and existing database tables
+- Implemented fix for ID sequence generation in critical database tables
+
 ## [1.0.13] - 18.05.2025
 
 ### Added
