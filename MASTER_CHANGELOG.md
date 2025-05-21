@@ -1,6 +1,89 @@
 # Concrete Mix Database - Master Changelog
 
-## Last Updated: 20.05.2025, 16:23
+## Last Updated: 22.05.2025, 01:35
+
+## Phase 4: Database Schema Alignment and Enhancement (22.05.2025, 01:35)
+
+### Key Improvements
+
+- **Model-Documentation Alignment**: Enhanced models to fully align with DB_SCHEMA.md documentation
+- **Data Model Enrichment**: Added critical fields to core models for better data representation
+- **Relationship Enhancement**: Added property field to PerformanceResult for precise property tracking
+- **Migration Robustness**: Fixed migration issues by improving field definitions
+
+### Technical Achievements
+
+- Successfully added missing fields to core models:
+  - Added property field to PerformanceResult to link results to specific concrete properties
+  - Added slump_mm, air_content_pct, target_strength_mpa, and density_kg_m3 to ConcreteMix model
+  - Added density_kg_m3 to Material model
+- Fixed migration issues by making the Dataset import_date field nullable
+- Updated import_ds1.py to utilize the new property field in PerformanceResult creation
+- Ensured complete alignment between documentation, models, and import scripts
+
+## Phase 4: Dataset Import Refinement - Bibliographic Reference Integration (22.05.2025, 00:23)
+
+### Key Improvements
+
+- **Model-Documentation Alignment**: Updated Dataset model to include all fields documented in DB_SCHEMA.md
+- **Bibliographic Reference Integration**: Added proper handling of academic paper citations for datasets
+- **Enhanced Citation Tracking**: Implemented automatic extraction and generation of citation information
+- **Academic Attribution**: Added support for tracking source papers at the dataset level
+
+### Technical Achievements
+
+- Successfully aligned the Dataset model with documentation by adding the missing biblio_reference field
+- Implemented automated paper citation generation based on dataset metadata
+- Created a reusable pattern for handling bibliographic references across all datasets
+- Preserved the existing mix-level reference system while adding dataset-level references
+
+## Phase 4: Dataset Import Refinement - Enhanced Data Integrity and Validation (22.05.2025, 00:17)
+
+### Key Improvements
+
+- **Enhanced Reference Data Management**: Import scripts now automatically create required reference data (material classes, properties, test methods) if missing
+- **Improved Data Integrity**: Replaced float with Decimal for all numeric values to preserve exact precision in concrete mix proportions
+- **Field Name Harmonization**: Corrected field name mismatch between code and database models (quantity_kg_m3 → dosage_kg_m3)
+- **Advanced Validation**: Updated validation ranges to match source data specifications and expanded testing age validation
+- **Code Optimization**: Implemented Django's update_or_create pattern for cleaner and more reliable model updates
+- **Robust Caching**: Enhanced material lookup with case-insensitive, special-character-resilient key generation
+- **Import Tracking**: Added support for last_import_date to distinguish between initial import and updates
+
+### Technical Achievements
+
+- Fixed documentation inconsistencies between DB_SCHEMA.md and actual model implementations
+- Eliminated ambiguous database lookups for properties and test methods
+- Enhanced error handling with more detailed logging and self-diagnosing capabilities
+- Created comprehensive validation logic for data ranges, ratio consistency, and component completeness
+
+## Phase 4: Production Implementation - Revised Dataset Import Approach (21.05.2025, 09:48)
+
+### Issues Addressed
+
+- **Incomplete Component Imports**: Critical components like admixtures (superplasticizers) were being omitted during import despite being present in source data
+- **Detail Model Dependencies**: Import scripts referenced detail models (CementDetail, ScmDetail, etc.) that were removed during database restructuring
+- **Field Name Evolution**: Database schema changes after cdb_app consolidation led to field name mismatches (e.g., removal of 'description' field from ConcreteMix model)
+- **Sequential Import Limitations**: Single sequential import approach unable to handle dataset-specific requirements
+- **ID Management Issues**: Multiple import attempts created duplicate records with inconsistent IDs
+
+### Technical Notes
+
+- Revamped import approach to focus on dataset-specific import scripts rather than a sequential approach
+- Added preprocessing step to thoroughly analyze each dataset's structure and content before import
+- Implemented comprehensive field verification against current database schema
+- Created component completeness checks to ensure all materials (including admixtures) are properly imported
+- Enhanced database reset procedures to properly clear tables and reset sequences
+- Removed all dependencies on non-existent detail models
+
+### Results
+
+- Successfully reset database and cleaned all tables
+- Created a systematic approach to dataset imports that accounts for database evolution
+- Enhanced LESSONS_LEARNED.md with Dataset 1 import findings
+- Updated DATABASE_REFRESH_PLAN.md with revised implementation approach
+- Created clear guidelines for future dataset imports to ensure completeness
+
+---
 
 ## Phase 4: Production Implementation - Import Script Fixes (20.05.2025, 16:23)
 
@@ -389,79 +472,16 @@ This master changelog documents all significant database operations, fixes, and 
 ### Issues Identified
 - Duplicate SCM entries with variant subtype codes (e.g., GGBS, ggbfs, BFS)
 - Missing or inconsistent `subtype_code` and `specific_name` fields
-- Mis-classified materials (e.g., CEM III/C under `SCM`)
+- Materials misclassified under incorrect categories (e.g., CEM III/C under `SCM`)
 
 ### Actions Taken
 1. Implemented `cleanup_materials.sql` to:
    - Merge duplicate SCM records into canonical entries
    - Update foreign keys dynamically across all referencing tables
-   - Re-classify mis-classified CEM entries under `CEMENT`
+   - Re-classify misclassified materials
    - Enforce composite-FK safety with fail-fast pre-flight check
    - Wrap operations in a single transaction with deferred constraints
 2. Exported before/after audit snapshots (`materials_audit_before.csv`, `materials_audit_after.csv`)
-
-### Results
-- 2 duplicate SCM records merged
-- Audit CSVs generated for verification
-- Referential integrity preserved (no orphaned child rows)
-
----
-
-## DS6 Mix Code Correction (May 7, 2025, 16:54)
-
-### Issues Identified
-- DS6 mix codes were incorrectly stored: the study number was in `mix_code` field (all "1")
-- Actual mix numbers were embedded in the notes as "Dataset: DS6; Mix number: X"
-
-### Actions Taken
-1. Created `fix_ds6_mixcodes.sql` to:
-   - Move the mix number from the notes to the `mix_code` field in proper "DS6-X" format
-   - Move the study number from `mix_code` to the notes as "Study reference: X"
-
-### Results
-- Successfully updated 654 mixes in the DS6 dataset
-- All DS6 mix codes now follow the standardized "DS6-X" format
-- Original study reference information preserved in notes
-- No duplicated mix codes detected
-
----
-
-## DS6 Water-Binder Ratio Fix (May 7, 2025, 17:13)
-
-### Issues Identified
-- DS6 dataset's water-to-binder ratios were incorrectly stored in the `w_c_ratio` column
-- The `w_b_ratio` column was empty for all DS6 mixes
-- Original ds6.csv only had `wbr_total` (water-to-binder ratio) values, no water-to-cement ratios
-
-### Actions Taken
-1. Created and applied `fix_ds6_ratios.sql` to:
-   - Move all values from `w_c_ratio` to the correct `w_b_ratio` column
-   - Set `w_c_ratio` to NULL for all DS6 mixes
-   - Create audit records to track changes
-
-### Results
-- Successfully moved water-binder ratios for all 654 DS6 mixes
-- Before: 654 mixes with w_c_ratio values, 0 with w_b_ratio values
-- After: 0 mixes with w_c_ratio values, 654 with w_b_ratio values
-- Range of w/b ratios preserved (0.20 to 0.72)
-
----
-
-## Comprehensive Material Cleanup (May 8, 2025, 09:42)
-
-### Issues Identified
-- Duplicate materials with different naming variations (e.g., GGBS, ggbfs, BFS all representing the same material)
-- Inconsistent naming patterns (case sensitivity, spaces vs. underscores)
-- Materials misclassified under incorrect categories (e.g., CEM III/C listed as SCM instead of CEMENT)
-- Redundant entries for common materials like fly ash, silica fume, and superplasticizers
-
-### Actions Taken
-1. Created and applied `comprehensive_material_cleanup.sql` to:
-   - Standardize material names and subtype_codes
-   - Merge duplicate materials into canonical entries
-   - Properly reclassify misclassified materials
-   - Update all foreign key references across the database
-   - Create audit records for all changes
 
 ### Results
 - Successfully merged 16 duplicate materials into 10 canonical materials:

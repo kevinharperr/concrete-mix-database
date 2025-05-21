@@ -107,6 +107,19 @@ class Dataset(models.Model):
     """Information about the source datasets."""
     dataset_id = models.AutoField(primary_key=True)
     dataset_name = models.CharField(max_length=60, unique=True, help_text="e.g., DS1, DS6")
+    description = models.TextField(blank=True, null=True, help_text="Detailed description of the dataset")
+    source = models.CharField(max_length=200, blank=True, null=True, help_text="Origin of the dataset")
+    import_date = models.DateTimeField(auto_now_add=True, null=True, help_text="Date when data was first imported")  # Added null=True to fix migration issues
+    last_import_date = models.DateTimeField(blank=True, null=True, help_text="Date when data was last updated")
+    year_published = models.IntegerField(blank=True, null=True, help_text="Year when the dataset was published")
+    biblio_reference = models.ForeignKey(
+        'BibliographicReference',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='datasets',
+        help_text="Academic reference for the dataset"
+    )
     license = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -151,6 +164,7 @@ class Material(models.Model):
     # Renamed brand_name to specific_name for broader use
     specific_name = models.TextField(blank=True, null=True, help_text="Most specific name from source, e.g., CEM I 52.5 R, OPC-32.5, Tap Water")
     manufacturer = models.TextField(blank=True, null=True)
+    density_kg_m3 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Material density in kg/m³")
     standard = models.ForeignKey(Standard, db_column="standard_ref", blank=True, null=True, on_delete=models.SET_NULL, related_name="materials") # Link to Standard table
     country_of_origin = models.CharField(max_length=60, blank=True, null=True)
     date_added = models.DateField(null=True, blank=True, auto_now_add=True) # Use auto_now_add?
@@ -176,6 +190,10 @@ class ConcreteMix(models.Model):
     region_country = models.CharField(max_length=60, blank=True, null=True)
     strength_class = models.CharField(max_length=10, blank=True, null=True, help_text="e.g., C30/37")
     target_slump_mm = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    slump_mm = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Measured slump in millimeters")
+    air_content_pct = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Air content percentage")
+    target_strength_mpa = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Target compressive strength in MPa")
+    density_kg_m3 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Fresh concrete density in kg/m³")
     w_c_ratio = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, help_text="Water/(Cement) ratio")
     w_b_ratio = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, help_text="Water/(Binder=Cement+SCM) ratio")
     wb_k_reported = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, help_text="Water/Binder ratio with k-value consideration (DIN 1045-2)")
@@ -265,6 +283,14 @@ class PerformanceResult(models.Model):
     result_id = models.AutoField(primary_key=True)
     mix = models.ForeignKey(ConcreteMix, on_delete=models.CASCADE, related_name="performance_results") # Result belongs to a mix
     category = models.CharField(max_length=15, choices=CATEGORY_CHOICES, db_index=True)
+    property = models.ForeignKey(
+        PropertyDictionary,
+        on_delete=models.PROTECT,
+        related_name="results",
+        help_text="The specific property being measured",
+        null=True,
+        blank=True  # Optional to avoid migration issues with existing data
+    )
     test_method = models.ForeignKey(TestMethod, null=True, blank=True, on_delete=models.SET_NULL) # Changed from IntegerField
     age_days = models.IntegerField(null=True, blank=True, db_index=True)
     value_num = models.DecimalField(max_digits=16, decimal_places=4, null=True, blank=True) # Changed from Numeric

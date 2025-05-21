@@ -1,5 +1,73 @@
 # Changelog
 
+## [1.0.19] - 22.05.2025
+
+### Added
+
+- Added missing fields to models to match DB_SCHEMA.md documentation:
+  - Added `property` field to PerformanceResult model to link results to specific concrete properties
+  - Added `slump_mm`, `air_content_pct`, `target_strength_mpa`, and `density_kg_m3` to ConcreteMix model
+  - Added `density_kg_m3` to Material model
+- Updated import_ds1.py to utilize the new property field in PerformanceResult creation
+
+### Fixed
+
+- Resolved migration issues by making the Dataset import_date field nullable
+- Aligned DB_SCHEMA.md with actual model implementations for better documentation accuracy
+- Fixed previous inconsistencies between import script and model field names
+
+## [1.0.18] - 22.05.2025
+
+### Added
+
+- Added bibliographic reference handling to Dataset model and import process
+- Implemented source paper citation generation for proper academic attribution
+- Enhanced Dataset model with missing fields to match documentation
+- Updated superplasticizer subtype code to use ASTM C494 Type G specification from source paper
+- Added fineness_modulus (3.0) for fine aggregate as specified in the research paper
+
+## [1.0.17] - 22.05.2025
+
+### Added
+
+- Enhanced Dataset 1 import script with comprehensive data validation and consistency checks
+- Implemented automatic creation of required reference data during import process
+- Added robust error handling and detailed logging throughout import process
+- Introduced precise decimal handling for all numeric values using Decimal instead of float
+- Added support for tracking last import date for datasets
+
+### Changed
+
+- Updated validation ranges in DS1 import to match documented specifications
+- Improved material lookup key generation for better handling of special characters
+- Enhanced detail model creation using update_or_create for more reliable updates
+- Standardized documentation format across all dataset definition files
+
+### Fixed
+
+- Corrected field name mismatch between code and database (quantity_kg_m3 → dosage_kg_m3)
+- Fixed documentation inconsistencies between DB_SCHEMA.md and actual model fields
+- Addressed potential precision issues in ratio calculations by using Decimal
+- Eliminated ambiguous database lookups for properties and test methods
+
+## [1.0.16] - 21.05.2025
+
+### Changed
+
+- Revised approach to Phase 4 database implementation:
+  - Switched from sequential import to dataset-specific focused imports
+  - Enhanced dataset analysis requirements before import
+  - Added field verification against current schema
+  - Implemented component completeness checks for admixtures and other materials
+  - Added progressive validation between dataset imports
+
+### Fixed
+
+- Fixed admixture component integration in import scripts to properly include superplasticizers
+- Removed dependencies on non-existent detail models (CementDetail, ScmDetail, etc.)
+- Fixed issues with field name evolution after cdb_app consolidation
+- Addressed database sequence reset issues to prevent ID conflicts
+
 ## [1.0.15] - 20.05.2025
 
 ### Fixed

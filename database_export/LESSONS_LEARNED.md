@@ -4,7 +4,7 @@
 
 This document captures key insights, challenges, and solutions discovered during the development and refinement of the Concrete Mix Database (CDB) application. It serves as a knowledge repository for future maintenance and development efforts.
 
-*Last Updated: 20.05.2025*
+*Last Updated: 22.05.2025*
 
 ## Database Architecture and Evolution
 
@@ -45,6 +45,34 @@ This document captures key insights, challenges, and solutions discovered during
 - **High W/B Ratios**: Identified that abnormally high water-binder ratios (>0.7) were often due to import errors rather than calculation issues.
 
 - **Import Process Failure**: Determined that the import process for DS2 had systematically used incorrect row mappings, importing data from mix #979 into a mix coded as DS2-734.
+
+### Dataset 1 Import Lessons (21.05.2025)
+
+- **Admixture Component Integration**: Discovered that admixtures (e.g., superplasticizer) were being omitted from mix components despite being present in the column mappings and source data. A complete concrete mix import must include all components specified in the source data, including admixtures.
+
+### Dataset Import Refinement Lessons (22.05.2025)
+
+- **Field Name Evolution**: Discovered a critical mismatch between code (using `quantity_kg_m3`) and the actual database model (using `dosage_kg_m3`). This highlighted the importance of synchronizing documentation with model changes and writing import scripts that strictly follow the current schema.
+
+- **Automated Reference Data Management**: Implemented a more resilient approach by automatically creating required reference data (material classes, properties, test methods) if missing. This eliminates dependency on manual database seeding and ensures imports can run in any environment.
+
+- **Numeric Precision Considerations**: Learned that using `float` for values intended for `DecimalField` can introduce subtle precision issues, especially in ratio calculations central to concrete mix design. Using `Decimal` throughout ensures exact precision and consistency with database storage.
+
+- **Detail Model Handling**: Refactored the approach for creating and updating detail models (CementDetail, ScmDetail, etc.) using Django's `update_or_create` pattern, which significantly simplifies code and reduces potential for data inconsistencies.
+
+- **Data Validation Accuracy**: Discovered that validation ranges in code didn't match the actual source data specifications, which would have led to valid data being rejected. This reinforced the importance of aligning validation logic with comprehensive dataset definition documents.
+
+- **Documentation-Code Alignment**: Found a significant mismatch between the `Dataset` model documented in DB_SCHEMA.md (with a `biblio_reference` field) and the actual model implementation (which lacked this field). This reinforced the critical importance of keeping model documentation and implementation synchronized, as well as validating all model relationships before writing import scripts.
+
+- **Bibliographic Reference Handling**: Implemented proper citation tracking at the dataset level while preserving the existing mix-level reference system. This dual-level approach provides both general attribution for the dataset source and specific citations for individual mix designs when needed.
+
+- **Field Name Evolution Issues**: When consolidating from a dual-app setup to a single cdb_app structure, model field names changed (e.g., removal of 'description' field in ConcreteMix model), breaking existing import scripts. Always verify current model field names before running imports.
+
+- **Detail Models Dependency**: Import scripts referenced detail models (CementDetail, ScmDetail, etc.) that were removed during database restructuring. Scripts must be updated to match the current schema without these dependencies.
+
+- **Sequential Import Failures**: Attempts to use a single sequential import script for multiple datasets proved unreliable. Each dataset requires its own focused import script with dataset-specific handling.
+
+- **Inappropriate Reuse of IDs**: Discovered multiple runs of import scripts were creating duplicate records with inconsistent IDs. Always clean the database and reset sequences before fresh imports.
 
 ### Validation Tools Development
 
