@@ -1,6 +1,53 @@
 # Concrete Mix Database - Master Changelog
 
-## Last Updated: 22.05.2025, 01:35
+## Last Updated: 28.05.2025, 00:22
+
+## Django Template Syntax Error Investigation (28.05.2025, 00:22)
+
+### Issues Identified
+
+- **Critical Template Errors**: Discovered significant syntax errors in the mix_detail.html template
+- **Error Pattern**: Server returns 500 error when accessing the mix detail page with error message 'Invalid block tag on line 896: endif, expected endblock'
+- **Visualization Impact**: The visualization tab functionality is completely broken due to these template issues
+- **JavaScript Integration**: Problems appear to be related to how JavaScript code blocks interact with Django template tags
+
+### Technical Investigation
+
+- Identified mismatched {% if %} and {% endif %} tags in the template
+- Discovered issues with JavaScript code embedded within Django template blocks
+- Found potential problems with how the {% block extra_js %} structure is closed
+- Identified potential nested template tags that are improperly closed
+
+### Next Steps
+
+- Conduct a comprehensive review of the template structure
+- Create a new branch for template fixes to avoid affecting the main codebase
+- Consider refactoring JavaScript code to separate files to reduce template complexity
+- Implement proper template debugging with better error messages
+
+## Last Updated: 27.05.2025, 14:45
+
+## Phase 4: Dataset Import Enhancement and ID Resolution (27.05.2025, 14:45)
+
+### Key Improvements
+
+- **Comprehensive Data Import**: Modified validation approach to prioritize complete data capture over strict validation
+- **Relationship Integrity**: Resolved critical issues with mix object IDs in component and performance result creation
+- **Custom Primary Key Handling**: Fixed references to model-specific primary key fields across the codebase
+- **Import Process Robustness**: Implemented transaction management and improved error logging
+
+### Technical Achievements
+
+- Successfully fixed critical issues in the Dataset 1 import process:
+  - Resolved mix component creation errors by properly fetching mix objects with valid IDs
+  - Fixed field references using model-specific primary key names (mix_id, property_name, etc.)
+  - Removed incompatible parameters from model creation calls
+  - Added detailed error logging with traceback for better debugging
+- Modified validation strategy to prioritize data completeness:
+  - Changed from strict validation during import to preserving all original data
+  - Successfully imported all 1030 mixes from Dataset 1 (previously only 740)
+  - Enabled post-import validation using data analysis tools
+- Updated documentation with new Dataset Import Strategy section in LESSONS_LEARNED.md
 
 ## Phase 4: Database Schema Alignment and Enhancement (22.05.2025, 01:35)
 

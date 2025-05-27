@@ -74,6 +74,30 @@ This document captures key insights, challenges, and solutions discovered during
 
 - **Inappropriate Reuse of IDs**: Discovered multiple runs of import scripts were creating duplicate records with inconsistent IDs. Always clean the database and reset sequences before fresh imports.
 
+### Database Schema Alignment Lessons (22.05.2025)
+
+- **Model-Documentation Alignment**: Discovered multiple discrepancies between the documented schema (DB_SCHEMA.md) and the actual models implementation. It's critical to maintain tight synchronization between documentation and code, particularly for database schemas.
+
+- **Missing Fields Impact**: Several important fields were missing from models that were documented in the schema, including property relationships in PerformanceResult and physical properties in Material and ConcreteMix models. These omissions limited data collection capabilities.
+
+- **Migration Challenges**: Adding new fields to models with existing data requires careful consideration of nullability and defaults. We encountered issues with auto_now_add fields which required making them nullable to allow for successful migrations.
+
+- **Import Script Adaptation**: When enhancing models with new fields, corresponding import scripts must be updated to utilize these fields. We successfully updated the import_ds1.py script to use the newly added property field in PerformanceResult, improving data clarity and relationship modeling.
+
+- **Field Name Consistency**: Maintaining consistent field names across documentation, models, and import scripts is essential for preventing runtime errors and data inconsistencies. We standardized naming patterns to ensure alignment across all components of the system.
+
+### Dataset Import Strategy Revision (27.05.2025)
+
+- **Comprehensive Data Capture**: Shifted from strict validation during import to importing all data first and validating afterward. This approach ensures complete data preservation and allows for more flexible data analysis later.
+
+- **Validation as a Separate Step**: Recognizing that research datasets often contain outliers or unusual values that might be valid in certain contexts, we now preserve all original data and implement validation as a separate analysis step using tools like pandas.
+
+- **Primary Key Resolution**: Fixed critical issues with mix object IDs in the import process by always fetching fresh mix objects from the database before creating related components and performance results. This ensures proper relationship integrity.
+
+- **Field Name Alignment**: Resolved issues with mismatched field names (e.g., 'notes' field being passed to models that don't have it) and primary key field references (using specific field names like 'mix_id' and 'property_name' instead of assuming 'id').
+
+- **Transaction Management**: Implemented proper transaction management using Django's transaction.atomic() to ensure database consistency during imports.
+
 ### Validation Tools Development
 
 - **Diagnostic Script Creation**: Developed multiple diagnostic scripts to identify and analyze water-binder ratio issues:
@@ -250,6 +274,18 @@ This document captures key insights, challenges, and solutions discovered during
 The Concrete Mix Database project has evolved significantly, addressing key challenges in data management, visualization, and analysis. The biggest lesson learned is the critical importance of data validation during the import process to ensure the accuracy of derived calculations like water-binder ratios.
 
 By implementing the recommendations in this document, the CDB application can continue to improve as a valuable tool for concrete mix design and analysis, providing reliable data for both practical applications and research purposes.
+
+## Django Template Syntax Issues (28 May 2025)
+
+### Mix Detail Template Structure
+
+- **Block Tag Mismatches**: Discovered critical issues with mismatched template tags in the `mix_detail.html` file. The error message "Invalid block tag on line 896: endif, expected endblock" indicates a fundamental issue with how template blocks are nested and closed.
+
+- **JavaScript Integration Challenges**: Embedding JavaScript within Django template tags requires careful attention to properly close all conditional blocks and ensure that the JavaScript syntax doesn't interfere with Django template processing.
+
+- **Visualization Tab Issues**: The visualizations tab, which uses Chart.js to render multiple charts based on mix data, is particularly susceptible to template syntax errors due to its complex structure of conditional blocks and dynamic content generation.
+
+- **Debugging Template Errors**: Django's template error messages can be cryptic, especially for complex templates. The line number reported in the error may not always be the actual cause, as the error can propagate from an earlier mismatch.
 
 ## Validation Run Implementation Lessons (16 May 2025 19:59)
 

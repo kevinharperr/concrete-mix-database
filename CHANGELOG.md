@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.0.21] - 28.05.2025
+
+### Issues Identified
+
+- Identified critical template syntax errors in mix_detail.html:
+  - Mismatched {% if %} and {% endif %} tags causing server 500 errors
+  - Issue specifically occurring around line 896 where an 'endif' tag appears where 'endblock' is expected
+  - Problem affects visualization tab functionality
+  - Error occurs in JavaScript block with Chart.js integration
+
+### Pending Fixes
+
+- Template structure needs comprehensive review to correct tag mismatches
+- JavaScript integration with Django template tags requires refactoring
+- Browser console errors suggest issues with canvas IDs and chart initialization
+
+## [1.0.20] - 27.05.2025
+
+### Fixed
+
+- Fixed critical issues in the Dataset 1 import process:
+  - Resolved mix component creation errors by properly fetching mix objects with valid IDs
+  - Fixed primary key field references using model-specific field names (mix_id, property_name, etc.)
+  - Removed notes parameter from MixComponent creation to match model definition
+  - Added robust error logging with traceback for better debugging
+
+### Changed
+
+- Modified validation approach in import_ds1.py to import all dataset rows:
+  - Changed from strict validation during import to preserving all original data
+  - Enables post-import validation using data analysis tools like pandas
+  - Successfully imported all 1030 mixes from Dataset 1 with components and performance results
+  - Updated LESSONS_LEARNED.md with new Dataset Import Strategy section
+
 ## [1.0.19] - 22.05.2025
 
 ### Added
