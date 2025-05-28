@@ -72,13 +72,45 @@ The database refresh process (documented in `DATABASE_REFRESH_PLAN.md`) uses bot
 2. **Visualization Issues**: Charts aren't rendering properly due to these template issues
 3. **JavaScript Integration**: Problems with how JavaScript is embedded in Django templates
 
+## Branch Management
+
+### Current Branch Status
+
+The repository currently has three branches:
+
+1. **master** - The stable production branch with the last known stable version
+2. **database-refresh** - The active development branch where all recent work has been done, including the database refresh functionality and template fixes
+3. **retire-concrete-mix-app** - A historical branch that was used for the major restructuring to transition from dual-app to single-app architecture
+
+### Branch Differences
+
+- The **database-refresh** branch contains all the latest features and fixes, including:
+  - Database refresh implementation
+  - Read-only mode functionality
+  - User notification system
+  - Database validation scripts
+  - Recent documentation updates
+  - Template fixes (attempted but not completed)
+
+- The **master** branch is behind and does not contain these recent changes
+
+### Recommendations for Branch Management
+
+1. **Continue working on the `database-refresh` branch** in the new platform
+2. **Do not merge branches yet** - Keep the branches separate until the template issues are fixed
+3. **After fixing template errors** - Once you've fixed the template syntax errors on the new platform, then consider merging `database-refresh` into `master`
+4. **Clean migration path** - Keeping the branches separate gives you a cleaner migration path and prevents introducing errors into the stable master branch
+
 ## Next Steps
 
-1. Create a separate branch for template fixes
-2. Perform a comprehensive review of the template structure
-3. Consider refactoring JavaScript to separate files for better maintainability
-4. Implement proper template debugging with clear error messages
-5. Fix the mismatched template tags in mix_detail.html
+1. Clone the repository from GitHub to the new platform
+2. Switch to the `database-refresh` branch with `git checkout database-refresh`
+3. Focus on fixing the template syntax issues in `templates/cdb_app/mix_detail.html`
+4. Perform a comprehensive review of the template structure
+5. Consider refactoring JavaScript to separate files for better maintainability
+6. Implement proper template debugging with clear error messages
+7. Fix the mismatched template tags in mix_detail.html
+8. After fixing issues, consider merging `database-refresh` into `master`
 
 ## Recent Work
 
