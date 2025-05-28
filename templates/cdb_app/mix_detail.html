@@ -216,7 +216,7 @@
                         </tr>
                         <tr>
                             <th>Total Cementitious:</th>
-                            <td>{{ total_cementitious|floatformat:1 }} kg/m³</td>
+                            <td>{{ total_cementitious|floatformat:1 }} kg/mÂ³</td>
                         </tr>
                     </table>
                     
@@ -257,7 +257,7 @@
                             <tr>
                                 <th>Material</th>
                                 <th>Type</th>
-                                <th>Dosage (kg/m³)</th>
+                                <th>Dosage (kg/mÂ³)</th>
                                 <th>Dosage (% of binder)</th>
                                 <th>Actions</th>
                             </tr>
@@ -671,9 +671,9 @@
                 });
                 
                 // Update the summary details
-                document.getElementById('totalMaterial').innerHTML = `${totalDosage.toFixed(1)} <small>kg/m³</small>`;
-                document.getElementById('cementContent').innerHTML = `${cementContent.toFixed(1)} <small>kg/m³</small>`;
-                document.getElementById('waterContent').innerHTML = `${waterContent.toFixed(1)} <small>kg/m³</small>`;
+                document.getElementById('totalMaterial').innerHTML = `${totalDosage.toFixed(1)} <small>kg/mÂ³</small>`;
+                document.getElementById('cementContent').innerHTML = `${cementContent.toFixed(1)} <small>kg/mÂ³</small>`;
+                document.getElementById('waterContent').innerHTML = `${waterContent.toFixed(1)} <small>kg/mÂ³</small>`;
             }
             {% endif %}
         
@@ -893,7 +893,6 @@
                 }
             }
         }
-        {% endif %}
 
         // Setup sustainability dashboard if data is available
         {% if sustainability_metrics %}
