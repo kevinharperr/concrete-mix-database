@@ -13,7 +13,10 @@ Usage:
 import os
 import sys
 import csv
+import json
 import logging
+import re
+import traceback
 import django
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
@@ -32,7 +35,7 @@ from cdb_app.models import (
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler("ds1_import.log"),
@@ -82,6 +85,7 @@ VALIDATION_RANGES = {
 }
 
 # Constants for reference data
+COMP_STRENGTH_PROP_CODE = "compressive_strength"
 COMP_STRENGTH_PROP_NAME = "Compressive Strength"
 TEST_METHOD_NAME_DS1 = "Standard Compression Test"
 STRENGTH_UNIT_SYMBOL = "MPa"
@@ -120,8 +124,7 @@ def load_reference_data():
     
     # Check for and create required property entries
     try:
-        # Use a valid code as property_name (PK)
-        COMP_STRENGTH_PROP_CODE = 'compressive_strength'
+        # Use the global COMP_STRENGTH_PROP_CODE constant
         strength_prop, created = PropertyDictionary.objects.get_or_create(
             property_name=COMP_STRENGTH_PROP_CODE,
             defaults={
@@ -146,8 +149,7 @@ def load_reference_data():
         mpa_unit, created = UnitLookup.objects.get_or_create(
             unit_symbol=STRENGTH_UNIT_SYMBOL,
             defaults={
-                'unit_name': 'Megapascal',
-                'dimension': 'pressure'
+                'description': 'Megapascal - unit of pressure'
             }
         )
         if created:
@@ -173,11 +175,12 @@ def load_reference_data():
     
     # Load test methods
     test_methods.clear()
-for method in TestMethod.objects.all():
-    if method.description: # Ensure description is not None before lowercasing
-        test_methods[method.description.lower()] = method
-    else:
-        logger.warning(f"TestMethod with id {method.test_method_id} has no description, cannot cache by name.")
+    for method in TestMethod.objects.all():
+        if method.description: # Ensure description is not None before lowercasing
+            test_methods[method.description.lower()] = method
+            logger.info(f"Loaded test method: {method.description}")
+        else:
+            logger.warning(f"TestMethod with id {method.test_method_id} has no description, cannot cache by name.")
 
 def create_or_get_bibliographic_reference():
     """Create or retrieve the bibliographic reference for Dataset 1"""
@@ -198,7 +201,6 @@ def create_or_get_bibliographic_reference():
                 publication=DATASET_JOURNAL,
                 year=DATASET_YEAR,
                 doi=DATASET_DOI,
-                url=f"https://doi.org/{DATASET_DOI}",
                 citation_text=DATASET_CITATION
             )
             logger.info(f"Created new bibliographic reference: {reference}")
@@ -432,56 +434,91 @@ def create_water_material(name="Mixing Water"):
 def create_mix_component(mix, material, quantity_kg_m3, notes=None):
     """Create a mix component record"""
     try:
+        logger.debug(f"Attempting to create component: {material.specific_name} ({quantity_kg_m3} kg/m³)")
         if quantity_kg_m3 and float(quantity_kg_m3) > 0:
+            # For safety, always fetch the mix object directly from the database using mix_code
+            mix_code = mix.mix_code
+            dataset = mix.dataset
+            logger.debug(f"Fetching mix from database using mix_code: {mix_code}")
+            fetched_mix = ConcreteMix.objects.get(dataset=dataset, mix_code=mix_code)
+            
+            logger.debug(f"Fetched mix object: {fetched_mix}, id: {fetched_mix.mix_id}")
+            logger.debug(f"Material object: {material}, id: {material.material_id}")
+            
+            # The MixComponent model doesn't have a notes field, so we don't pass it
             component = MixComponent.objects.create(
-                mix=mix,
+                mix=fetched_mix,  # Use the fetched mix object with a valid ID
                 material=material,
-                dosage_kg_m3=quantity_kg_m3,
-                notes=notes
+                dosage_kg_m3=quantity_kg_m3
             )
             logger.info(f"Created component: {material.specific_name} ({quantity_kg_m3} kg/m³)")
             return component
+        else:
+            logger.debug(f"Skipping component creation, quantity is not valid: {quantity_kg_m3}")
         return None
     except Exception as e:
         logger.error(f"Error creating mix component: {str(e)}")
+        logger.error(f"Mix code: {mix.mix_code}, Material: {material.specific_name}, Quantity: {quantity_kg_m3}")
         raise
 
 def create_performance_result(mix, value, age_days):
-    """Create a compressive strength performance result using predefined reference data"""
+    """Create a performance result record for compressive strength"""
     try:
-        # Get the property (compressive strength) from our cached dictionary
-        # Use the code instead of the name for lookup
+        logger.debug(f"Attempting to create performance result: {value} MPa at {age_days} days")
+        
+        # Get strength property
+        logger.debug(f"Properties dictionary content: {list(properties.keys())}")
+        logger.debug(f"Looking for property with code '{COMP_STRENGTH_PROP_CODE.lower()}'")
         strength_property = properties.get(COMP_STRENGTH_PROP_CODE.lower())
+        logger.debug(f"Found strength property: {strength_property}, property_name: {strength_property.property_name}")
+        
         if not strength_property:
             logger.error(f"Compressive strength property '{COMP_STRENGTH_PROP_CODE}' not found")
             raise ValueError(f"Compressive strength property '{COMP_STRENGTH_PROP_CODE}' not found")
         
+        logger.debug(f"Found strength property: {strength_property}, property_name: {strength_property.property_name}")
+        
         # Get the unit (MPa) from our cached dictionary
         mpa_unit = units.get(STRENGTH_UNIT_SYMBOL.lower())
+        logger.debug(f"Units dictionary content: {[u for u in units.keys()]}")
         if not mpa_unit:
             logger.error(f"Unit '{STRENGTH_UNIT_SYMBOL}' not found")
             raise ValueError(f"Unit '{STRENGTH_UNIT_SYMBOL}' not found")
+        logger.debug(f"Found unit: {mpa_unit}, unit_id: {mpa_unit.unit_id}")
         
-        # Get the specific test method from our cached dictionary
+        # Get test method
         test_method = test_methods.get(TEST_METHOD_NAME_DS1.lower())
         if not test_method:
             logger.error(f"Test method '{TEST_METHOD_NAME_DS1}' not found")
             raise ValueError(f"Test method '{TEST_METHOD_NAME_DS1}' not found")
+        logger.debug(f"Found test method: {test_method}, test_method_id: {test_method.test_method_id}")
+        
+        # For safety, always fetch the mix object directly from the database using mix_code
+        mix_code = mix.mix_code
+        dataset = mix.dataset
+        logger.debug(f"Fetching mix from database using mix_code: {mix_code}")
+        
+        # Fetch the mix object with a valid ID
+        fetched_mix = ConcreteMix.objects.get(dataset=dataset, mix_code=mix_code)
+        
+        logger.debug(f"Fetched mix object: {fetched_mix}, id: {fetched_mix.mix_id}")
         
         # Create the performance result - use the property field now that it exists
         result = PerformanceResult.objects.create(
-            mix=mix,
-            property=strength_property,  # Now using the property field
+            mix=fetched_mix,  # Use the fetched mix object with valid ID
+            property=strength_property,  # Use the PropertyDictionary object
             category=PerformanceResult.HARDENED,
             age_days=age_days,
             value_num=value,
             unit=mpa_unit,
             test_method=test_method
         )
-        logger.info(f"Created performance result: {value} {STRENGTH_UNIT_SYMBOL} at {age_days} days")
+        logger.info(f"Created performance result: {value} MPa at {age_days} days")
         return result
+    
     except Exception as e:
         logger.error(f"Error creating performance result: {str(e)}")
+        logger.error(f"Mix: {mix.mix_code}, Value: {value}, Age: {age_days}")
         raise
 
 def validate_mix_components(mix):
@@ -575,7 +612,9 @@ def validate_data_ranges(row, mix_id):
         warnings.append(f"Mix {mix_id}: Strength {strength} MPa outside expected range ({min_strength}-{max_strength})")
     
     # Check testing age
-    age_days = int(row.get('testing_age', 0))
+    # Handle testing age with decimal points (like '28.00')
+    testing_age_value = row.get('testing_age', 0)
+    age_days = int(float(testing_age_value)) if testing_age_value else 0
     valid_ages = VALIDATION_RANGES['testing_age_days']
     if age_days > 0 and age_days not in valid_ages:
         warnings.append(f"Mix {mix_id}: Testing age {age_days} days not in expected values {valid_ages}")
@@ -601,7 +640,7 @@ def validate_data_ranges(row, mix_id):
     fa_kg_m3 = Decimal(row.get('natural_fine_aggregate_kg_m3', 0))
     ca_fa_ratio = Decimal(row.get('coarse-agg_fine-agg_ratio', 0))
     
-    if ca_kg_m3 > 0 and fa_kg_m3 > 0:
+    if ca_kg_m3 > 0 and fa_kg_m3 > 0 and ca_fa_ratio > 0:
         calculated_ca_fa = ca_kg_m3 / fa_kg_m3
         if abs(calculated_ca_fa - ca_fa_ratio) > 0.02:  # Allow slightly larger tolerance for aggregates
             warnings.append(f"Mix {mix_id}: Calculated CA/FA ratio {calculated_ca_fa:.2f} doesn't match provided value {ca_fa_ratio}")
@@ -610,7 +649,9 @@ def validate_data_ranges(row, mix_id):
     for warning in warnings:
         logger.warning(warning)
     
-    return len(warnings) == 0
+    # Log validation warnings but don't skip imports
+    # We collect the warnings for reporting but return True to import all mixes
+    return True
 
 def import_dataset():
     """Main function to import Dataset 1"""
@@ -622,25 +663,25 @@ def import_dataset():
     
     # Create or get the dataset
     dataset = create_or_get_dataset()
+    mix_count = 0
     
-    # Create standard materials that will be reused
-    logger.info("Creating standard materials")
-    cement = create_cement_material()
-    slag = create_scm_material("Ground Granulated Blast Furnace Slag", "GGBS", "GGBS")
-    fly_ash = create_scm_material("Fly Ash", "FA", "FA")
-    water = create_water_material()
-    superplasticizer = create_admixture_material("Superplasticizer", "ASTM C494 Type G", 40.0, 1.1)
-    coarse_aggregate = create_aggregate_material("Natural Coarse Aggregate", "NCA", 4.0, 20.0)
-    fine_aggregate = create_aggregate_material("Natural Fine Aggregate", "NFA", 0.0, 4.0, fineness_modulus=Decimal('3.0'))
-    
-    # Process the CSV file
-    logger.info(f"Reading source file: {SOURCE_FILE}")
-    with open(SOURCE_FILE, 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        mix_count = 0
+    # Use transaction to ensure database consistency
+    with transaction.atomic():
+        # Create standard materials that will be reused
+        logger.info("Creating standard materials")
+        cement = create_cement_material()
+        slag = create_scm_material("Ground Granulated Blast Furnace Slag", "GGBS", "GGBS")
+        fly_ash = create_scm_material("Fly Ash", "FA", "FA")
+        water = create_water_material()
+        superplasticizer = create_admixture_material("Superplasticizer", "ASTM C494 Type G", 40.0, 1.1)
+        coarse_aggregate = create_aggregate_material("Natural Coarse Aggregate", "NCA", 4.0, 20.0)
+        fine_aggregate = create_aggregate_material("Natural Fine Aggregate", "NFA", 0.0, 4.0, fineness_modulus=Decimal('3.0'))
         
-        # Use a transaction for better performance and data integrity
-        with transaction.atomic():
+        # Process the CSV file
+        logger.info(f"Reading source file: {SOURCE_FILE}")
+        with open(SOURCE_FILE, 'r', encoding='utf-8-sig') as csvfile:  # Using utf-8-sig to handle BOM character
+            reader = csv.DictReader(csvfile)
+            
             for i, row in enumerate(reader, 1):
                 try:
                     # Validate data ranges
@@ -661,15 +702,23 @@ def import_dataset():
                     if sp_pct:
                         notes += f"SP % of cement: {sp_pct}\n"
                     
-                    # Create the mix record
+                    # Create the mix record with a unique mix_code
+                    mix_code = f"DS1-{i}"
+                    logger.info(f"Creating mix: {mix_code}")
+                    
                     mix = ConcreteMix.objects.create(
                         dataset=dataset,
-                        mix_code=f"DS1-{i}",
+                        mix_code=mix_code,
                         w_c_ratio=w_c_ratio,
                         w_b_ratio=w_b_ratio,
                         notes=notes
                     )
-                    logger.info(f"Created mix: DS1-{i}")
+                    # Save the mix explicitly to ensure it's in the database
+                    mix.save()
+                    
+                    # Retrieve the mix again to ensure we have a fresh object with valid ID
+                    fetched_mix = ConcreteMix.objects.get(dataset=dataset, mix_code=mix_code)
+                    logger.info(f"Created mix: {mix_code}, ID: {fetched_mix.mix_id if hasattr(fetched_mix, 'mix_id') else 'Primary key not found'}")
                     mix_count += 1
                     
                     # Extract component quantities
@@ -681,46 +730,49 @@ def import_dataset():
                     ca_qty = Decimal(row.get('natural_coarse_aggregate_kg_m3', 0))
                     fa_qty = Decimal(row.get('natural_fine_aggregate_kg_m3', 0))
                     
-                    # Create components
+                    # Create components - use the fetched_mix with valid ID
                     if cement_qty > 0:
-                        create_mix_component(mix, cement, cement_qty)
+                        create_mix_component(fetched_mix, cement, cement_qty)
                         component_counts['cement'] += 1
                     
                     if slag_qty > 0:
-                        create_mix_component(mix, slag, slag_qty)
+                        create_mix_component(fetched_mix, slag, slag_qty)
                         component_counts['slag'] += 1
                     
                     if fly_ash_qty > 0:
-                        create_mix_component(mix, fly_ash, fly_ash_qty)
+                        create_mix_component(fetched_mix, fly_ash, fly_ash_qty)
                         component_counts['fly_ash'] += 1
                     
                     if water_qty > 0:
-                        create_mix_component(mix, water, water_qty)
+                        create_mix_component(fetched_mix, water, water_qty)
                         component_counts['water'] += 1
                     
                     if sp_qty > 0:
-                        create_mix_component(mix, superplasticizer, sp_qty)
+                        create_mix_component(fetched_mix, superplasticizer, sp_qty)
                         component_counts['superplasticizer'] += 1
                     
                     if ca_qty > 0:
-                        create_mix_component(mix, coarse_aggregate, ca_qty)
+                        create_mix_component(fetched_mix, coarse_aggregate, ca_qty)
                         component_counts['coarse_aggregate'] += 1
                     
                     if fa_qty > 0:
-                        create_mix_component(mix, fine_aggregate, fa_qty)
+                        create_mix_component(fetched_mix, fine_aggregate, fa_qty)
                         component_counts['fine_aggregate'] += 1
                     
                     # Create performance result
                     strength = Decimal(row.get('fck_mpa', 0))
-                    age_days = int(row.get('testing_age', 28))
+                    # Handle testing age with decimal points (like '28.00')
+                    testing_age_value = row.get('testing_age', 28)
+                    age_days = int(float(testing_age_value)) if testing_age_value else 28
                     if strength > 0:
-                        create_performance_result(mix, strength, age_days)
+                        create_performance_result(fetched_mix, strength, age_days)
                     
                     # Validate this mix has all required components
-                    validate_mix_components(mix)
+                    validate_mix_components(fetched_mix)
                     
                 except Exception as e:
                     logger.error(f"Error processing row {i}: {str(e)}")
+                    logger.error(traceback.format_exc())  # Add detailed traceback for debugging
                     continue
     
     # Log import statistics

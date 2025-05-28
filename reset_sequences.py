@@ -9,7 +9,7 @@ import django
 
 # Set up Django environment
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'concrete_mix_project.settings_staging')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'concrete_mix_project.settings')
 django.setup()
 
 # Import Django models

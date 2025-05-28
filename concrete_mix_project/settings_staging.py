@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'cdb_app',  # Main database app
+    'refresh_status',  # Database refresh status app
     
     # Third-party apps
     'crispy_forms',
@@ -77,6 +78,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'refresh_status.context_processors.notifications',
             ],
         },
     },

@@ -89,28 +89,48 @@
             <i class="fas fa-cubes"></i> Mixes in Dataset
         </div>
         <div class="card-body p-0">
-            {% if mixes %}
+            {% if page_obj %}
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
                                 <th>Mix ID</th>
                                 <th>Mix Code</th>
+                                <th>Region</th>
                                 <th>W/C Ratio</th>
                                 <th>W/B Ratio</th>
-                                <th>Target Strength</th>
+                                <th>Comp. Strength</th>
+                                <th>Age (days)</th>
                                 <th>Components</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for mix in mixes %}
+                            {% for mix in page_obj %}
                                 <tr>
                                     <td>{{ mix.mix_id }}</td>
                                     <td>{{ mix.mix_code }}</td>
+                                    <td>{{ mix.region_country|default:"" }}</td>
                                     <td>{{ mix.w_c_ratio|default_if_none:"-" }}</td>
                                     <td>{{ mix.w_b_ratio|default_if_none:"-" }}</td>
-                                    <td>{{ mix.target_strength_mpa|default_if_none:"-" }} MPa</td>
+                                    <td>
+                                        {% if mix.strength_28d %}
+                                            {{ mix.strength_28d|floatformat:1 }} MPa
+                                        {% elif mix.any_strength %}
+                                            {{ mix.any_strength|floatformat:1 }} MPa
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if mix.test_age %}
+                                            {{ mix.test_age }}
+                                        {% elif mix.any_age %}
+                                            {{ mix.any_age }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                     <td>{{ mix.components.count }}</td>
                                     <td>
                                         <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}" class="btn btn-sm btn-info">

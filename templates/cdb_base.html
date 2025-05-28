@@ -99,6 +99,7 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             {% if user.is_staff %}
                             <li><a class="dropdown-item" href="/admin/" target="_blank">Admin <i class="fas fa-external-link-alt fa-xs"></i></a></li>
+                            <li><a class="dropdown-item{% if request.resolver_match.url_name == 'manage_notifications' %} active{% endif %}" href="{% url 'refresh_status:manage_notifications' %}">Manage Notifications <i class="fas fa-bell fa-xs"></i></a></li>
                             <li><hr class="dropdown-divider"></li>
                             {% endif %}
                             <li><a class="dropdown-item" href="{% url 'account_change_password' %}">Change Password</a></li>

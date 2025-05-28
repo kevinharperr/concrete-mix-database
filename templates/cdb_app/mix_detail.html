@@ -24,7 +24,7 @@
     </div>
     
     <!-- Main navigation tabs -->
-    <ul class="nav nav-tabs mt-3" id="mixTabs" role="tablist">
+    <ul class="nav nav-tabs" id="mixTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
                 <i class="fas fa-info-circle"></i> Details
@@ -204,8 +204,24 @@
                     <i class="fas fa-balance-scale"></i> Key Ratios & Properties
                 </div>
                 <div class="card-body">
+                    <h5>Mix Ratios:</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Water/Cement Ratio:</th>
+                            <td>{{ mix.w_c_ratio|default_if_none:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Water/Binder Ratio:</th>
+                            <td>{{ mix.w_b_ratio|default_if_none:"Not specified" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Cementitious:</th>
+                            <td>{{ total_cementitious|floatformat:1 }} kg/m³</td>
+                        </tr>
+                    </table>
+                    
+                    <h5 class="mt-3">References:</h5>
                     <div class="alert alert-secondary">
-                        <h5>References:</h5>
                         {% if references.exists %}
                             <ul class="mb-0">
                                 {% for ref in references %}
@@ -573,112 +589,180 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/enhanced_charts.js' %}"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Enhanced materials proportions charts
-        {% if components %}
-        const materialLabels = [{% for comp in components %}"{{ comp.material.specific_name }}",{% endfor %}];
-        const materialData = [{% for comp in components %}{{ comp.dosage_kg_m3|default:0 }},{% endfor %}];
-        const materialClasses = [{% for comp in components %}"{{ comp.material.material_class.class_code }}",{% endfor %}];
+    // Tab navigation with URL hash support
+    function activateTab(tabId) {
+        // Deactivate all tabs
+        const tabs = document.querySelectorAll('#mixTabs .nav-link');
+        tabs.forEach(tab => tab.classList.remove('active'));
         
-        // Calculate total dosage
-        const totalDosage = materialData.reduce((sum, val) => sum + val, 0);
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
         
-        // Create enhanced stacked bar chart in the visualizations tab
-        createEnhancedMaterialProportionsChart('materialProportionsChart', materialLabels, materialData, materialClasses);
-        
-        // Create material distribution pie chart in the visualizations tab
-        createMaterialDistributionPieChart('materialPieChart', materialLabels, materialData, materialClasses);
-        
-        // Add summary card in the details tab
-        const mixSummaryElement = document.getElementById('mixSummary');
-        if (mixSummaryElement) {
-            // Calculate cement and water content
-            let cementContent = 0;
-            let waterContent = 0;
+        // Activate the requested tab
+        const activeTab = document.getElementById(tabId + '-tab');
+        if (activeTab) {
+            activeTab.classList.add('active');
             
-            materialClasses.forEach((classCode, index) => {
-                if (classCode === 'CEMENT') {
-                    cementContent += materialData[index];
-                } else if (classCode === 'WATER') {
-                    waterContent += materialData[index];
-                }
-            });
-            
-            // Update the summary details
-            document.getElementById('totalMaterial').innerHTML = `${totalDosage.toFixed(1)} <small>kg/m³</small>`;
-            document.getElementById('cementContent').innerHTML = `${cementContent.toFixed(1)} <small>kg/m³</small>`;
-            document.getElementById('waterContent').innerHTML = `${waterContent.toFixed(1)} <small>kg/m³</small>`;
+            const activePane = document.getElementById(tabId);
+            if (activePane) {
+                activePane.classList.add('show', 'active');
+            }
         }
-        {% endif %}
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check URL hash on page load
+        const hash = window.location.hash.substring(1) || 'details';
+        activateTab(hash);
         
-        // Enhanced strength development chart
-        {% if performance_results %}
-        // Process fresh properties data
-        const freshData = [];
-        const freshLabels = [];
-        const freshUnits = [];
-        const freshCategories = [];
+        // Setup click handlers for tabs
+        document.querySelectorAll('#mixTabs .nav-link').forEach(tabLink => {
+            tabLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('aria-controls');
+                window.location.hash = targetId;
+                activateTab(targetId);
+            });
+        });
         
-        {% for result in performance_results %}
-            {% if 'slump' in result.category|lower or 'flow' in result.category|lower or 'workability' in result.category|lower or 'fresh' in result.category|lower or 'density' in result.category|lower or 'air content' in result.category|lower %}
-                freshData.push({{ result.value_num|default:0 }});
-                freshLabels.push('{{ result.category }}');
-                freshUnits.push('{{ result.unit.unit_symbol|default:"" }}');
-                freshCategories.push('{{ result.category }}');
+        // Listen for hash changes (e.g. when user navigates with back/forward buttons)
+        window.addEventListener('hashchange', function() {
+            const hash = window.location.hash.substring(1) || 'details';
+            activateTab(hash);
+        });
+        
+        // Chart initialization
+        console.log('DOM loaded, initializing charts');
+        
+        // Visualizations Tab Charts
+        if (document.getElementById('visualizations')) {
+            console.log('Visualization tab found, preparing charts');
+            
+            // Enhanced materials proportions charts
+            {% if components %}
+            const materialLabels = [{% for comp in components %}'{{ comp.material.specific_name }}',{% endfor %}];
+            const materialData = [{% for comp in components %}{{ comp.dosage_kg_m3|default:0 }},{% endfor %}];
+            const materialClasses = [{% for comp in components %}'{{ comp.material.material_class.class_code }}',{% endfor %}];
+            
+            console.log('Material data:', materialLabels, materialData, materialClasses);
+            
+            // Calculate total dosage
+            const totalDosage = materialData.reduce((sum, val) => sum + val, 0);
+            
+            // Create enhanced stacked bar chart in the visualizations tab
+            createEnhancedMaterialProportionsChart('materialProportionsChart', materialLabels, materialData, materialClasses);
+            
+            // Create material distribution pie chart in the visualizations tab
+            createMaterialDistributionPieChart('materialPieChart', materialLabels, materialData, materialClasses);
+            
+            // Add summary card in the details tab
+            const mixSummaryElement = document.getElementById('mixSummary');
+            if (mixSummaryElement) {
+                // Calculate cement and water content
+                let cementContent = 0;
+                let waterContent = 0;
+                
+                materialClasses.forEach((classCode, index) => {
+                    if (classCode === 'CEMENT') {
+                        cementContent += materialData[index];
+                    } else if (classCode === 'WATER') {
+                        waterContent += materialData[index];
+                    }
+                });
+                
+                // Update the summary details
+                document.getElementById('totalMaterial').innerHTML = `${totalDosage.toFixed(1)} <small>kg/m³</small>`;
+                document.getElementById('cementContent').innerHTML = `${cementContent.toFixed(1)} <small>kg/m³</small>`;
+                document.getElementById('waterContent').innerHTML = `${waterContent.toFixed(1)} <small>kg/m³</small>`;
+            }
             {% endif %}
-        {% endfor %}
         
-        // Create fresh properties chart if we have data
-        if (freshLabels.length > 0) {
-            const freshPropertiesChart = document.getElementById('freshPropertiesChart');
-            if (freshPropertiesChart) {
-                const freshCtx = freshPropertiesChart.getContext('2d');
-                new Chart(freshCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: freshLabels,
-                        datasets: [{
-                            label: 'Fresh Concrete Properties',
-                            data: freshData,
-                            backgroundColor: 'rgba(255, 159, 64, 0.6)',
-                            borderColor: 'rgba(255, 159, 64, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Value'
+        // Process performance data
+        {% if performance_results %}
+            // Process fresh properties data
+            const freshData = [];
+            const freshLabels = [];
+            const freshUnits = [];
+            const freshCategories = [];
+            
+            {% for result in performance_results %}
+                {% if 'slump' in result.category|lower or 'flow' in result.category|lower or 'workability' in result.category|lower or 'fresh' in result.category|lower or 'density' in result.category|lower or 'air content' in result.category|lower %}
+                    freshData.push({{ result.value_num|default:0 }});
+                    freshLabels.push('{{ result.category }}');
+                    freshUnits.push('{{ result.unit.unit_symbol|default:"" }}');
+                    freshCategories.push('{{ result.category }}');
+                {% endif %}
+            {% endfor %}
+        
+            // Create fresh properties chart if we have data
+            if (freshLabels.length > 0) {
+                console.log('Fresh properties data available:', freshLabels, freshData);
+                // Check if fresh properties container exists
+                const performanceSection = document.querySelector('.tab-pane#visualizations .row');
+                if (performanceSection && !document.getElementById('freshPropertiesChart')) {
+                    // Create fresh properties card if it doesn't exist
+                    const freshPropsCard = document.createElement('div');
+                    freshPropsCard.className = 'col-12 mb-4';
+                    freshPropsCard.innerHTML = `
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-tachometer-alt"></i> Fresh Concrete Properties</h5>
+                            </div>
+                            <div class="card-body">
+                                <div style="height: 350px;">
+                                    <canvas id="freshPropertiesChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    performanceSection.appendChild(freshPropsCard);
+                }
+                
+                const freshPropertiesChart = document.getElementById('freshPropertiesChart');
+                if (freshPropertiesChart) {
+                    console.log('Fresh properties canvas found, creating chart');
+                    const freshCtx = freshPropertiesChart.getContext('2d');
+                    new Chart(freshCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: freshLabels,
+                            datasets: [{
+                                label: 'Fresh Properties',
+                                data: freshData,
+                                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Value'
+                                    }
                                 }
                             },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Property'
-                                }
-                            }
-                        },
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const dataIndex = context.dataIndex;
-                                        const value = freshData[dataIndex];
-                                        const unit = freshUnits[dataIndex] || '';
-                                        return `Value: ${value} ${unit}`;
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.raw;
+                                            const index = context.dataIndex;
+                                            const unit = freshUnits[index] || '';
+                                            return `${value} ${unit}`;
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
-        }
+            {% endif %} <!-- End of fresh properties chart -->
         
         // Process durability results data
         const durabilityData = [];
@@ -765,7 +849,8 @@
             // Create enhanced strength chart with prediction model
             // Pass target strength if available
             const targetStrength = {{ mix.target_strength_mpa|default:'null' }};
-            createEnhancedStrengthChart('strengthChart', strengthLabels, strengthData, targetStrength);
+            console.log('Creating strength chart with data:', strengthLabels, strengthData);
+            createEnhancedStrengthChart('strengthDevelopmentChart', strengthLabels, strengthData, targetStrength);
         }
         
         // Performance radar chart setup
@@ -779,39 +864,37 @@
             {% endif %}
         {% endfor %}
         
+        console.log('Performance categories:', performanceCategories);
         // Only create radar chart if we have enough different categories
         if (Object.keys(performanceCategories).length >= 3) {
-            // Create canvas for radar chart
-            const radarContainer = document.createElement('div');
-            radarContainer.className = 'tab-pane fade';
-            radarContainer.id = 'performance-radar';
-            radarContainer.setAttribute('role', 'tabpanel');
-            radarContainer.setAttribute('aria-labelledby', 'radar-tab');
-            radarContainer.style.height = '300px';
+            console.log('Creating performance radar chart with categories:', Object.keys(performanceCategories));
             
-            const radarCanvas = document.createElement('canvas');
-            radarCanvas.id = 'performanceRadarChart';
-            radarContainer.appendChild(radarCanvas);
+            // We already have a canvas with ID 'performanceRadarChart' in the HTML structure
+            const existingRadarChart = document.getElementById('performanceRadarChart');
             
-            // Add the tab button
-            const radarTab = document.createElement('li');
-            radarTab.className = 'nav-item';
-            radarTab.innerHTML = `
-                <button class="nav-link" id="radar-tab" data-bs-toggle="tab" data-bs-target="#performance-radar" 
-                   type="button" role="tab" aria-controls="performance-radar" aria-selected="false">
-                    <i class="fas fa-radar"></i> Performance Radar
-                </button>
-            `;
-            
-            // Add tab and container to the document
-            document.querySelector('.nav-tabs').appendChild(radarTab);
-            document.querySelector('.tab-content').appendChild(radarContainer);
-            
-            // Create the radar chart
-            createPerformanceRadarChart('performanceRadarChart', performanceCategories);
+            if (existingRadarChart) {
+                console.log('Using existing performance radar chart canvas');
+                createPerformanceRadarChart('performanceRadarChart', performanceCategories);
+            } else {
+                console.log('Creating new performance radar chart canvas');
+                // The original code creates a new tab, but we already have a performance metrics section
+                // Let's find the proper container to add the chart
+                const performanceSection = document.querySelector('.tab-pane#visualizations .col-md-6:nth-child(2) .card-body');
+                if (performanceSection) {
+                    const radarCanvas = document.createElement('canvas');
+                    radarCanvas.id = 'performanceRadarChart';
+                    performanceSection.innerHTML = '';
+                    performanceSection.appendChild(radarCanvas);
+                    
+                    // Create the radar chart
+                    createPerformanceRadarChart('performanceRadarChart', performanceCategories);
+                } else {
+                    console.error('Could not find performance section in the DOM');
+                }
+            }
         }
         {% endif %}
-        
+
         // Setup sustainability dashboard if data is available
         {% if sustainability_metrics %}
         const sustainabilityData = {

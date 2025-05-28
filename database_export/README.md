@@ -4,13 +4,13 @@
 
 This directory contains a database export of the Concrete Mix Database (CDB) application.
 
-**Export Date:** 2025-05-16 15:34:05
+**Export Date:** 2025-05-20 10:27:03
 **Database Name:** cdb
 
 ## Files Included
 
-- `cdb_database_dump_20250516_153403.backup`: Binary format database dump (for direct restoration)
-- `cdb_database_dump_20250516_153403.sql`: SQL format database dump (for inspection or manual import)
+- `cdb_database_dump_20250520_102702.backup`: Binary format database dump (for direct restoration)
+- `cdb_database_dump_20250520_102702.sql`: SQL format database dump (for inspection or manual import)
 
 ## Import Instructions
 
@@ -26,7 +26,7 @@ This directory contains a database export of the Concrete Mix Database (CDB) app
 psql -c 'CREATE DATABASE cdb;' -U postgres
 
 # Restore the database from the binary dump
-pg_restore -d cdb -U postgres cdb_database_dump_20250516_153403.backup
+pg_restore -d cdb -U postgres cdb_database_dump_20250520_102702.backup
 ```
 
 ### Option 2: SQL Import
@@ -36,7 +36,7 @@ pg_restore -d cdb -U postgres cdb_database_dump_20250516_153403.backup
 psql -c 'CREATE DATABASE cdb;' -U postgres
 
 # Import the SQL dump
-psql -d cdb -U postgres -f cdb_database_dump_20250516_153403.sql
+psql -d cdb -U postgres -f cdb_database_dump_20250520_102702.sql
 ```
 
 ## Application Setup

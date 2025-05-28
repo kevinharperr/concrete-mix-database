@@ -1,11 +1,33 @@
-{% if is_read_only %}
+{% load refresh_status_tags %}
+
+{% if maintenance_active %}
 <div class="read-only-indicator">
-    <div class="alert alert-warning mb-0 rounded-0 text-center" role="alert">
-        <i class="fas fa-lock me-2"></i>
-        <strong>READ-ONLY MODE</strong> - Database modifications are temporarily disabled.
-        {% if maintenance_message %}
-        <br><small>{{ maintenance_message }}</small>
+    <div class="alert {% if is_in_progress %}alert-primary{% else %}alert-warning{% endif %} mb-0 rounded-0 text-center" role="alert">
+        {% if is_in_progress %}
+            <i class="fas fa-sync-alt fa-spin me-2"></i>
+            <strong>DATABASE REFRESH IN PROGRESS</strong>
+            {% if progress_percentage > 0 %}
+                - {{ progress_percentage }}% Complete
+            {% endif %}
+            {% if time_remaining %}
+                - Estimated completion in {% if time_remaining > 60 %}{{ time_remaining|divisibleby:60 }} hour{{ time_remaining|divisibleby:60|pluralize }} {% endif %}{{ time_remaining|modulo:60 }} minute{{ time_remaining|modulo:60|pluralize }}
+            {% endif %}
+        {% else %}
+            <i class="fas fa-lock me-2"></i>
+            <strong>READ-ONLY MODE</strong> - Database modifications are temporarily disabled.
         {% endif %}
+        
+        {% if maintenance_message %}
+            <br><span>{{ maintenance_message }}</span>
+        {% endif %}
+        
+        {% if latest_log %}
+            <br><small class="text-muted">Latest action: {{ latest_log.message }} ({{ latest_log.timestamp|time:"H:i:s" }})</small>
+        {% endif %}
+        
+        <div class="mt-1">
+            <a href="{% url 'refresh_status:status' %}" class="alert-link small">View Status Details</a>
+        </div>
     </div>
 </div>
 {% endif %}

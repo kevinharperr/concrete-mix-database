@@ -1,0 +1,271 @@
+{% extends "cdb_base.html" %}
+{% load static %}
+
+{% block title %}Manage Database Notifications - Concrete Mix Database{% endblock %}
+
+{% block extra_head %}
+<style>
+    .notification-list {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    .notification-card {
+        margin-bottom: 15px;
+    }
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .notification-badge {
+        font-size: 0.9em;
+    }
+    .notification-dates {
+        font-size: 0.8em;
+        color: #6c757d;
+    }
+    .preview-box {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    @media (prefers-color-scheme: dark) {
+        .notification-dates {
+            color: #adb5bd;
+        }
+        .preview-box {
+            border-color: #495057;
+            background-color: #343a40;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">Manage Database Notifications</h1>
+                <a href="{% url 'refresh_status:status' %}" class="btn btn-outline-secondary">Back to Status</a>
+            </div>
+            <p class="text-muted">Create and manage notifications for the database refresh process</p>
+            <hr>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Left column: Create notification -->
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="notificationTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab" aria-controls="create" aria-selected="true">Create Notification</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button" role="tab" aria-controls="schedule" aria-selected="false">Schedule Maintenance</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="notificationTabsContent">
+                        <!-- Create notification form -->
+                        <div class="tab-pane fade show active" id="create" role="tabpanel" aria-labelledby="create-tab">
+                            <form method="post" action="{% url 'refresh_status:create_notification' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Title</label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="message" class="form-label">Message</label>
+                                    <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                                    <div class="form-text">HTML formatting is supported for links.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="notification_type" class="form-label">Type</label>
+                                    <select class="form-select" id="notification_type" name="notification_type">
+                                        {% for type_code, type_name in notification_types %}
+                                        <option value="{{ type_code }}">{{ type_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="duration_days" class="form-label">Display Duration (days)</label>
+                                    <input type="number" class="form-control" id="duration_days" name="duration_days" value="3" min="1" max="30">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="display_order" class="form-label">Display Order</label>
+                                    <input type="number" class="form-control" id="display_order" name="display_order" value="0" min="0" max="100">
+                                    <div class="form-text">Higher values will display first.</div>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="dismissible" name="dismissible" checked>
+                                    <label class="form-check-label" for="dismissible">Allow users to dismiss</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="display_on_all_pages" name="display_on_all_pages" checked>
+                                    <label class="form-check-label" for="display_on_all_pages">Display on all pages</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="specific_pages" class="form-label">Specific Pages (if not all)</label>
+                                    <input type="text" class="form-control" id="specific_pages" name="specific_pages" placeholder="/mixes/,/materials/">
+                                    <div class="form-text">Comma-separated list of URL paths (leave empty if displaying on all pages).</div>
+                                </div>
+                                <hr>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="send_email" name="send_email">
+                                    <label class="form-check-label" for="send_email">Send email notification</label>
+                                </div>
+                                <div class="mb-3 form-check" id="email_all_users_container" style="display: none;">
+                                    <input type="checkbox" class="form-check-input" id="email_all_users" name="email_all_users">
+                                    <label class="form-check-label" for="email_all_users">Send to all active users</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Create Notification</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Schedule maintenance form -->
+                        <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
+                            <form method="post" action="{% url 'refresh_status:schedule_maintenance' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Maintenance Start Date</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="start_time" class="form-label">Maintenance Start Time</label>
+                                    <input type="time" class="form-control" id="start_time" name="start_time" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="duration_hours" class="form-label">Estimated Duration (hours)</label>
+                                    <input type="number" class="form-control" id="duration_hours" name="duration_hours" value="2" min="0.5" step="0.5" max="72">
+                                </div>
+                                <div class="alert alert-info">
+                                    <h5 class="alert-heading">What This Will Do</h5>
+                                    <p>Scheduling maintenance will:</p>
+                                    <ul>
+                                        <li>Create an advance notification (visible 3 days before maintenance)</li>
+                                        <li>Create a during-maintenance notification</li>
+                                        <li>Send emails to all active users</li>
+                                        <li>Update the status page with maintenance timing</li>
+                                    </ul>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Schedule Maintenance</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right column: Existing notifications -->
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Active Notifications</h5>
+                </div>
+                <div class="card-body notification-list">
+                    {% if notifications %}
+                        {% for notification in notifications %}
+                        <div class="card notification-card">
+                            <div class="card-header notification-header">
+                                <div>
+                                    <span class="fw-bold">{{ notification.title }}</span>
+                                    <span class="badge bg-{{ notification.notification_type }} notification-badge ms-2">{{ notification.get_notification_type_display }}</span>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-{% if notification.is_active %}success{% else %}secondary{% endif %} toggle-active" data-id="{{ notification.id }}" data-active="{{ notification.is_active|lower }}">
+                                        {% if notification.is_active %}Active{% else %}Inactive{% endif %}
+                                    </button>
+                                    <a href="{% url 'refresh_status:delete_notification' notification.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this notification?');">Delete</a>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p>{{ notification.message|linebreaksbr }}</p>
+                                <div class="notification-dates">
+                                    <div><strong>Created:</strong> {{ notification.created_at }}</div>
+                                    <div><strong>Display period:</strong> {{ notification.start_display }} to {{ notification.end_display|default:'indefinite' }}</div>
+                                    <div><strong>Settings:</strong> 
+                                        Order: {{ notification.display_order }} | 
+                                        Dismissible: {% if notification.dismissible %}Yes{% else %}No{% endif %} | 
+                                        All pages: {% if notification.display_on_all_pages %}Yes{% else %}No{% endif %}
+                                    </div>
+                                    {% if not notification.display_on_all_pages and notification.specific_pages %}
+                                    <div><strong>Specific pages:</strong> {{ notification.specific_pages }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No notifications have been created yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle email all users option visibility
+        const sendEmailCheckbox = document.getElementById('send_email');
+        const emailAllUsersContainer = document.getElementById('email_all_users_container');
+        
+        if (sendEmailCheckbox && emailAllUsersContainer) {
+            sendEmailCheckbox.addEventListener('change', function() {
+                emailAllUsersContainer.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        // Toggle notification active status
+        const toggleButtons = document.querySelectorAll('.toggle-active');
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const notificationId = this.getAttribute('data-id');
+                const isActive = this.getAttribute('data-active') === 'true';
+                
+                fetch(`/status/notifications/${notificationId}/toggle/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update button text and style
+                        this.textContent = data.is_active ? 'Active' : 'Inactive';
+                        this.classList.remove('btn-outline-success', 'btn-outline-secondary');
+                        this.classList.add(data.is_active ? 'btn-outline-success' : 'btn-outline-secondary');
+                        this.setAttribute('data-active', data.is_active);
+                    }
+                });
+            });
+        });
+        
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

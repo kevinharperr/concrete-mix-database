@@ -27,6 +27,15 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development only
+EMAIL_SUBJECT_PREFIX = '[Concrete Mix DB] '
+DEFAULT_FROM_EMAIL = 'noreply@concretemixdb.example.com'
+
+# Site configuration for links in emails
+SITE_URL = 'http://127.0.0.1:8000'
+SITE_NAME = 'Concrete Mix Database'
+
 
 # Application definition
 
@@ -80,7 +89,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'refresh_status.context_processors.refresh_notifications',
+                'refresh_status.context_processors.refresh_status',
             ],
         },
     },

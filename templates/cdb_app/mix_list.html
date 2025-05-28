@@ -87,10 +87,10 @@
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <span><i class="fas fa-list"></i> Mixes List</span>
                     <div class="btn-group">
-                        <a href="?sort=mix_code_natural" class="btn btn-sm {% if current_ordering == 'mix_code_natural' %}btn-light{% else %}btn-outline-light{% endif %}">
+                        <a href="?sort=mix_code_natural{% if query_params and query_params != 'sort=mix_code_natural' and query_params != 'sort=mix_id' %}&{{ query_params }}{% endif %}" class="btn btn-sm {% if current_ordering == 'mix_code_natural' %}btn-light{% else %}btn-outline-light{% endif %}">
                             Sort by Code
                         </a>
-                        <a href="?sort=mix_id" class="btn btn-sm {% if current_ordering == 'mix_id' %}btn-light{% else %}btn-outline-light{% endif %}">
+                        <a href="?sort=mix_id{% if query_params and query_params != 'sort=mix_code_natural' and query_params != 'sort=mix_id' %}&{{ query_params }}{% endif %}" class="btn btn-sm {% if current_ordering == 'mix_id' %}btn-light{% else %}btn-outline-light{% endif %}">
                             Sort by ID
                         </a>
                     </div>
@@ -106,20 +106,38 @@
                                     <th>Region</th>
                                     <th>W/C Ratio</th>
                                     <th>W/B Ratio</th>
-                                    <th>Target Strength</th>
+                                    <th>Compressive Strength (MPa)</th>
+                                    <th>Age (days)</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for mix in page_obj %}
-                                    <tr>
+                                    <tr class="mix-row" data-dataset="{{ mix.dataset.dataset_name|default:"" }}">
                                         <td>{{ mix.mix_id }}</td>
                                         <td>{{ mix.mix_code }}</td>
                                         <td>{{ mix.dataset.dataset_name|default:"" }}</td>
                                         <td>{{ mix.region_country|default:"" }}</td>
                                         <td>{{ mix.w_c_ratio|default_if_none:"-" }}</td>
                                         <td>{{ mix.w_b_ratio|default_if_none:"-" }}</td>
-                                        <td>{{ mix.target_strength_mpa|default_if_none:"-" }} MPa</td>
+                                        <td>
+                                            {% if mix.strength_28d %}
+                                                {{ mix.strength_28d|floatformat:1 }} MPa
+                                            {% elif mix.any_strength %}
+                                                {{ mix.any_strength|floatformat:1 }} MPa
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if mix.test_age %}
+                                                {{ mix.test_age }}
+                                            {% elif mix.any_age %}
+                                                {{ mix.any_age }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             <a href="{% url 'cdb_app:mix_detail' pk=mix.pk %}" class="btn btn-sm btn-info">
                                                 <i class="fas fa-eye"></i>
@@ -131,7 +149,7 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="8" class="text-center">No mixes found.</td>
+                                        <td colspan="9" class="text-center">No mixes found.</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -213,7 +231,7 @@
 
 {% block extra_js %}
 <script>
-    // Client-side filtering functionality for concrete mixes
+        // Client-side filtering functionality for concrete mixes
     document.addEventListener('DOMContentLoaded', function() {
         // Get filter elements
         const datasetsFilter = document.getElementById('datasetsFilter');
@@ -223,60 +241,86 @@
         const wbRatioFilter = document.getElementById('wbRatioFilter');
         const applyFiltersButton = document.getElementById('applyFilters');
         
-        // Populate datasets dropdown
-        const datasets = [];
-        {% for mix in mixes %}
-            if ('{{ mix.dataset.dataset_name }}' && !datasets.includes('{{ mix.dataset.dataset_name }}')) {
-                datasets.push('{{ mix.dataset.dataset_name }}');
-            }
-        {% endfor %}
+        // Add hardcoded Dataset 1 option if not already present
+        const hasDataset1 = Array.from(datasetsFilter.options).some(option => option.value === 'Dataset 1');
+        if (!hasDataset1) {
+            const dataset1Option = document.createElement('option');
+            dataset1Option.value = 'Dataset 1';
+            dataset1Option.textContent = 'Dataset 1';
+            datasetsFilter.appendChild(dataset1Option);
+        }
         
-        datasets.sort().forEach(dataset => {
-            const option = document.createElement('option');
-            option.value = dataset;
-            option.textContent = dataset;
-            datasetsFilter.appendChild(option);
-        });
+        // Populate datasets from the server-provided dataset string
+        const datasetString = '{{ datasets_string }}';
+        const datasets = datasetString.split(',').filter(d => d.trim() !== '');
+        
+        // Add dataset options to dropdown
+        if (datasets.length > 0) {
+            // Clear existing options
+            while (datasetsFilter.firstChild) {
+                datasetsFilter.removeChild(datasetsFilter.firstChild);
+            }
+            
+            // Add 'All Datasets' option
+            const allOption = document.createElement('option');
+            allOption.value = '';
+            allOption.textContent = 'All Datasets';
+            datasetsFilter.appendChild(allOption);
+            
+            // Add dataset options
+            datasets.forEach(dataset => {
+                const option = document.createElement('option');
+                option.value = dataset;
+                option.textContent = dataset;
+                datasetsFilter.appendChild(option);
+            });
+        }
         
         // Handle filter application
         applyFiltersButton.addEventListener('click', function() {
-            // Build query string from filters
+            // Create URLSearchParams object from current URL to preserve existing parameters
             const params = new URLSearchParams(window.location.search);
             
-            // Keep pagination and sorting params
-            if (!params.has('page')) {
-                params.set('page', '1'); // Reset to first page when filtering
+            // Store the current sort parameter if it exists
+            const sortParam = params.get('sort');
+            
+            // Clear only the filter parameters, not sort or other non-filter params
+            // This ensures we don't have duplicate or conflicting filter values
+            ['dataset', 'region', 'min_strength', 'strength_class', 'max_wb'].forEach(filterName => {
+                if (params.has(filterName)) {
+                    params.delete(filterName);
+                }
+            });
+            
+            // Remove page parameter - when applying new filters, we should start at page 1
+            if (params.has('page')) {
+                params.delete('page');
             }
             
-            // Set filter params
+            // Add filter parameters
             if (datasetsFilter.value) {
                 params.set('dataset', datasetsFilter.value);
-            } else {
-                params.delete('dataset');
             }
             
             if (regionFilter.value) {
                 params.set('region', regionFilter.value);
-            } else {
-                params.delete('region');
             }
             
             if (strengthFilter.value) {
                 params.set('min_strength', strengthFilter.value);
-            } else {
-                params.delete('min_strength');
             }
             
             if (strengthClassFilter.value) {
                 params.set('strength_class', strengthClassFilter.value);
-            } else {
-                params.delete('strength_class');
             }
             
             if (wbRatioFilter.value) {
                 params.set('max_wb', wbRatioFilter.value);
-            } else {
-                params.delete('max_wb');
+            }
+            
+            // Make sure sort is preserved or set a default
+            if (!params.has('sort') && sortParam) {
+                params.set('sort', sortParam);
             }
             
             // Redirect with filters applied

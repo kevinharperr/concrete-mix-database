@@ -43,9 +43,12 @@ class MaterialPropertyForm(forms.ModelForm):
 # --- Concrete Mix Forms --- #
 class ConcreteMixForm(forms.ModelForm):
     """Form for creating and editing concrete mixes."""
+    # Replace the dataset field with a CharField for direct entry
+    dataset_name = forms.CharField(max_length=60, required=True, help_text="Enter dataset name directly")
+    
     class Meta:
         model = ConcreteMix
-        fields = ['mix_code', 'dataset', 'region_country', 'w_c_ratio', 'w_b_ratio', 
+        fields = ['mix_code', 'region_country', 'w_c_ratio', 'w_b_ratio', 
                  'target_slump_mm', 'strength_class', 'notes']
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 3}),
@@ -60,6 +63,33 @@ class ConcreteMixForm(forms.ModelForm):
             'strength_class': 'Strength Class',
             'region_country': 'Region/Country',
         }
+    
+    def __init__(self, *args, **kwargs):
+        # Get the initial dataset instance if provided
+        instance = kwargs.get('instance')
+        if instance and instance.dataset:
+            # Set initial value for dataset_name field from the instance
+            kwargs.setdefault('initial', {}).update({'dataset_name': instance.dataset.dataset_name})
+        super().__init__(*args, **kwargs)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+    
+    def save(self, commit=True):
+        # Get the dataset_name from the form data
+        dataset_name = self.cleaned_data.get('dataset_name')
+        
+        # Get or create the Dataset instance
+        if dataset_name:
+            dataset, created = Dataset.objects.get_or_create(
+                dataset_name=dataset_name,
+            )
+            
+            # Set the dataset for the mix
+            self.instance.dataset = dataset
+        
+        return super().save(commit)
 
 class MixComponentForm(forms.ModelForm):
     """Form for adding/editing mix components."""

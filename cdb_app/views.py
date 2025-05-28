@@ -197,8 +197,54 @@ def delete_material_view(request, pk):
 @login_required
 def mix_list_view(request):
     """Display a filterable list of mixes, handles sorting and CSV export."""
+    print("\n========== FILTER DEBUG START ==========")
+    print(f"Request GET params: {request.GET}")
+    print(f"Request path: {request.path}")
+    
+    # Track filter states for debugging
+    filter_debug = {
+        "dataset": None,
+        "region": None,
+        "min_strength": None,
+        "strength_class": None,
+        "max_wb": None,
+        "sort": None,
+        "page": None,
+        "original_query_string": request.GET.urlencode(),
+    }
+    
     # Get all mixes with prefetched components and dataset for efficiency
     mixes = ConcreteMix.objects.select_related('dataset').all()
+    
+    # Set a default region value for Dataset 1 mixes
+    for mix in mixes:
+        if mix.dataset and mix.dataset.dataset_name == 'Dataset 1' and not mix.region_country:
+            mix.region_country = 'Taiwan'
+            mix.save()
+    
+    # Annotate each mix with its 28-day compressive strength result
+    # Use a subquery to get the 28-day compressive strength for each mix
+    from django.db.models import OuterRef, Subquery, F, Value, CharField
+    
+    # First try to get 28-day results
+    strength_28d_subquery = PerformanceResult.objects.filter(
+        mix=OuterRef('pk'),
+        age_days=28,
+        property__property_name__icontains='compressive'  # Use property_name field from PropertyDictionary
+    ).values('value_num', 'age_days')[:1]
+    
+    # If no 28-day results, get any compressive strength result
+    any_strength_subquery = PerformanceResult.objects.filter(
+        mix=OuterRef('pk'),
+        property__property_name__icontains='compressive'  # Use property_name field from PropertyDictionary
+    ).order_by('age_days').values('value_num', 'age_days')[:1]
+    
+    mixes = mixes.annotate(
+        strength_28d=Subquery(strength_28d_subquery.values('value_num')),
+        test_age=Subquery(strength_28d_subquery.values('age_days')),
+        any_strength=Subquery(any_strength_subquery.values('value_num')),
+        any_age=Subquery(any_strength_subquery.values('age_days'))
+    )
     
     # Apply filters from query parameters
     filters_applied = False
@@ -206,133 +252,243 @@ def mix_list_view(request):
     # Filter by dataset name if provided
     dataset_filter = request.GET.get('dataset')
     if dataset_filter:
+        print(f"Applying dataset filter: {dataset_filter}")
         mixes = mixes.filter(dataset__dataset_name=dataset_filter)
         filters_applied = True
+        filter_debug["dataset"] = dataset_filter
+    else:
+        print("No dataset filter applied")
     
     # Filter by region/country if provided
     region_filter = request.GET.get('region')
     if region_filter:
+        print(f"Applying region filter: {region_filter}")
         mixes = mixes.filter(region_country__icontains=region_filter)
         filters_applied = True
+        filter_debug["region"] = region_filter
+    else:
+        print("No region filter applied")
     
     # Filter by minimum strength from test results
     min_strength = request.GET.get('min_strength')
-    if min_strength and min_strength.isdigit():
-        # Join with performance results and filter by 28-day compressive strength
-        # Use union to combine different category filters instead of Q objects
-        mixes_compressive = mixes.filter(
-            performance_results__category__icontains='compressive',
-            performance_results__age_days=28,
-            performance_results__value_num__gte=min_strength
-        )
-        mixes_strength = mixes.filter(
-            performance_results__category__icontains='strength',
-            performance_results__age_days=28,
-            performance_results__value_num__gte=min_strength
-        )
-        mixes_hardened = mixes.filter(
-            performance_results__category__icontains='hardened',
-            performance_results__age_days=28,
-            performance_results__value_num__gte=min_strength
-        )
-        # Combine the results using Q objects since union().distinct() is not supported
-        from django.db.models import Q
-        # Start with the base queryset again
-        mixes = ConcreteMix.objects.select_related('dataset').all()
-        if filters_applied:
-            # Apply all previous filters again
-            if dataset:
-                mixes = mixes.filter(dataset__dataset_name=dataset)
-            if region:
-                mixes = mixes.filter(region__icontains=region)
-            if max_wb and max_wb.replace('.', '', 1).isdigit():
-                mixes = mixes.filter(w_b_ratio__lte=max_wb)
+    if min_strength and min_strength.replace('.', '', 1).isdigit():
+        try:
+            min_strength_value = float(min_strength)
+            print(f"Applying min strength filter: {min_strength_value} MPa")
+            filter_debug["min_strength"] = min_strength_value
             
-        # Now apply the strength filter using Q objects
-        mixes = mixes.filter(
-            Q(performance_results__category__icontains='compressive') | 
-            Q(performance_results__category__icontains='strength') | 
-            Q(performance_results__category__icontains='hardened'),
-            performance_results__age_days=28,
-            performance_results__value_num__gte=min_strength
-        ).distinct()
+            # Import Q objects if needed
+            if 'Q' not in locals():
+                from django.db.models import Q
+            
+            # Annotate the queryset with strength values first (similar to what we do for display)
+            # so we can consistently filter on the same values that we display
+            mixes_with_strength = ConcreteMix.objects.select_related('dataset').all()
+            
+            # Apply previous filters if any
+            if filters_applied:
+                if dataset_filter:
+                    mixes_with_strength = mixes_with_strength.filter(dataset__dataset_name=dataset_filter)
+                if region_filter:
+                    mixes_with_strength = mixes_with_strength.filter(region_country__icontains=region_filter)
+            
+            # Annotate with strength data
+            mixes_with_strength = mixes_with_strength.annotate(
+                strength_28d=Subquery(strength_28d_subquery.values('value_num')),
+                test_age=Subquery(strength_28d_subquery.values('age_days')),
+                any_strength=Subquery(any_strength_subquery.values('value_num')),
+                any_age=Subquery(any_strength_subquery.values('age_days'))
+            )
+            
+            # Calculate a distribution of strength values for debugging
+            strength_stats = mixes_with_strength.aggregate(
+                total=Count('pk'),
+                with_strength_28d=Count('strength_28d', filter=Q(strength_28d__isnull=False)),
+                with_any_strength=Count('any_strength', filter=Q(any_strength__isnull=False)),
+                without_any_strength=Count('pk', filter=Q(strength_28d__isnull=True) & Q(any_strength__isnull=True)),
+                above_min_threshold_28d=Count('pk', filter=Q(strength_28d__isnull=False) & Q(strength_28d__gte=min_strength_value)),
+                above_min_threshold_any=Count('pk', filter=Q(any_strength__isnull=False) & Q(any_strength__gte=min_strength_value))
+            )
+            print(f"Min strength filter stats: {strength_stats}")
+            
+            # Filter for mixes with at least one strength value above threshold
+            mixes = mixes_with_strength.filter(
+                (Q(strength_28d__isnull=False) & Q(strength_28d__gte=min_strength_value)) | 
+                (Q(any_strength__isnull=False) & Q(any_strength__gte=min_strength_value))
+            ).distinct()
+            print(f"Mixes with strength >= {min_strength_value} MPa: {mixes.count()}")
+        except ValueError:
+            # If there's a parsing error, ignore this filter
+            pass
+        
         filters_applied = True
     
     # Filter by strength class
     strength_class = request.GET.get('strength_class')
     if strength_class:
-        # Parse the strength class filter (e.g., "EN:C25/30" or "ASTM:4000")
-        try:
-            standard, class_code = strength_class.split(':')
+        print(f"Applying strength class filter: {strength_class}")
+        filter_debug["strength_class"] = strength_class
+        
+        # Import Q objects if not imported already
+        if 'Q' not in locals():
+            from django.db.models import Q
+        
+        # Set default min strength value (needed for error cases)
+        min_strength_value = 25.0  # Default to 25 MPa if parsing fails
+        max_strength_value = float('inf')  # Default to infinity if parsing fails
+        print(f"Initial min_strength_value for class: {min_strength_value}")
+        print(f"Initial max_strength_value for class: {max_strength_value}")
             
-            # Import utility functions for strength classification
-            from .utils import EN_STRENGTH_CLASSES, ASTM_STRENGTH_CLASSES, MPA_TO_PSI, PSI_TO_MPA
-            
-            min_strength_value = None
-            
-            # Find the minimum strength value for the selected class
+        # Define strength classes
+        # EN classes are like C25/30 where 25 is the minimum cylinder strength in MPa
+        # and 30 is the minimum cube strength in MPa
+        
+        # Strength classes with (min, max) values
+        EN_STRENGTH_CLASSES = {
+            'C8/10': (8.0, 12.0),
+            'C12/15': (12.0, 16.0),
+            'C16/20': (16.0, 20.0),
+            'C20/25': (20.0, 25.0),
+            'C25/30': (25.0, 30.0), 
+            'C30/37': (30.0, 35.0),
+            'C35/45': (35.0, 40.0),
+            'C40/50': (40.0, 45.0),
+            'C45/55': (45.0, 50.0),
+            'C50/60': (50.0, 55.0),
+            'C55/67': (55.0, 60.0),
+            'C60/75': (60.0, 70.0),
+            'C70/85': (70.0, 80.0),
+            'C80/95': (80.0, 90.0),
+            'C90/105': (90.0, 100.0),
+            'C100/115': (100.0, float('inf')),
+        }
+        
+        # ASTM classes with (min, max) values in psi
+        ASTM_STRENGTH_CLASSES = {
+            '2500': (2500, 3000),
+            '3000': (3000, 4000),
+            '4000': (4000, 5000),
+            '5000': (5000, 6000),
+            '6000': (6000, 8000),
+            '8000': (8000, 10000),
+            '10000': (10000, float('inf'))
+        }
+        
+        # Parse the prefix (EN, CSA, ASTM)
+        parts = strength_class.split(':', 1)
+        
+        if len(parts) == 2:
+            standard = parts[0]
+            class_code = parts[1]
+            print(f"Parsed strength class with prefix: standard={standard}, class_code={class_code}")
+
             if standard == 'EN':
-                for en_class in EN_STRENGTH_CLASSES:
-                    if en_class[0] == class_code:
-                        min_strength_value = en_class[1]  # MPa value
-                        break
+                # Look for the class in the EN standards
+                if class_code in EN_STRENGTH_CLASSES:
+                    min_strength_value, max_strength_value = EN_STRENGTH_CLASSES[class_code]
+                    print(f"Found EN class {class_code} with strength range: {min_strength_value} to {max_strength_value} MPa")
+                else:
+                    print(f"WARNING: Unknown EN class: {class_code}")
+                
             elif standard == 'ASTM':
-                for astm_class in ASTM_STRENGTH_CLASSES:
-                    if astm_class[0] == class_code:
-                        # Convert from psi to MPa for database query
-                        min_strength_value = float(astm_class[1]) * float(PSI_TO_MPA)
-                        break
+                # Handle ASTM classes
+                if class_code in ASTM_STRENGTH_CLASSES:
+                    # Convert from psi to MPa (divide by 145)
+                    min_strength_psi, max_strength_psi = ASTM_STRENGTH_CLASSES[class_code]
+                    min_strength_value = min_strength_psi / 145
+                    max_strength_value = max_strength_psi / 145 if max_strength_psi != float('inf') else float('inf')
+                    print(f"Found ASTM class {class_code} with strength range: {min_strength_value} to {max_strength_value} MPa")
+                else:
+                    print(f"WARNING: Unknown ASTM class: {class_code}")
+        else:
+            # If no standard prefix, assume it's an EN class
+            if strength_class in EN_STRENGTH_CLASSES:
+                min_strength_value, max_strength_value = EN_STRENGTH_CLASSES[strength_class]
+                print(f"Found EN class {strength_class} with strength range: {min_strength_value} to {max_strength_value} MPa")
+            else:
+                print(f"WARNING: Unknown strength class: {strength_class}")
             
-            if min_strength_value:
-                # Filter by calculated minimum strength using union to avoid Q objects
-                mixes_compressive = mixes.filter(
-                    performance_results__category__icontains='compressive',
-                    performance_results__age_days=28,
-                    performance_results__value_num__gte=min_strength_value
-                )
-                mixes_strength = mixes.filter(
-                    performance_results__category__icontains='strength',
-                    performance_results__age_days=28,
-                    performance_results__value_num__gte=min_strength_value
-                )
-                mixes_hardened = mixes.filter(
-                    performance_results__category__icontains='hardened',
-                    performance_results__age_days=28,
-                    performance_results__value_num__gte=min_strength_value
-                )
-                # Combine the results using Q objects since union().distinct() is not supported
-                # Start with the base queryset again
-                mixes = ConcreteMix.objects.select_related('dataset').all()
-                if filters_applied:
-                    # Apply all previous filters again
-                    if dataset:
-                        mixes = mixes.filter(dataset__dataset_name=dataset)
-                    if region:
-                        mixes = mixes.filter(region__icontains=region)
-                    if max_wb and max_wb.replace('.', '', 1).isdigit():
-                        mixes = mixes.filter(w_b_ratio__lte=max_wb)
-            
-                # Now apply the strength filter using Q objects
-                mixes = mixes.filter(
-                    Q(performance_results__category__icontains='compressive') | 
-                    Q(performance_results__category__icontains='strength') | 
-                    Q(performance_results__category__icontains='hardened'),
-                    performance_results__age_days=28,
-                    performance_results__value_num__gte=min_strength_value
-                ).distinct()
-                filters_applied = True
-        except (ValueError, IndexError):
-            # If the strength class format is invalid, ignore this filter
-            pass
+        # Start with the base queryset again
+        mixes_with_class = ConcreteMix.objects.select_related('dataset').all()
+        
+        # Apply previous filters if any
+        if filters_applied:
+            if dataset_filter:
+                mixes_with_class = mixes_with_class.filter(dataset__dataset_name=dataset_filter)
+            if region_filter:
+                mixes_with_class = mixes_with_class.filter(region_country__icontains=region_filter)
+        
+        # Apply the strength class filter using annotated strength values
+        mixes_with_class = mixes_with_class.annotate(
+            strength_28d=Subquery(strength_28d_subquery.values('value_num')),
+            test_age=Subquery(strength_28d_subquery.values('age_days')),
+            any_strength=Subquery(any_strength_subquery.values('value_num')),
+            any_age=Subquery(any_strength_subquery.values('age_days'))
+        )
+        
+        # Now filter the annotated queryset
+        print(f"Before applying strength class filter: {mixes_with_class.count()} mixes")
+        
+        # Calculate a distribution of strength values for debugging
+        strength_stats = mixes_with_class.aggregate(
+            total=Count('pk'),
+            with_strength_28d=Count('strength_28d', filter=Q(strength_28d__isnull=False)),
+            with_any_strength=Count('any_strength', filter=Q(any_strength__isnull=False)),
+            without_any_strength=Count('pk', filter=Q(strength_28d__isnull=True) & Q(any_strength__isnull=True)),
+            in_range_28d=Count('pk', filter=Q(strength_28d__isnull=False) & 
+                              Q(strength_28d__gte=min_strength_value) & Q(strength_28d__lt=max_strength_value)),
+            in_range_any=Count('pk', filter=Q(any_strength__isnull=False) & 
+                             Q(any_strength__gte=min_strength_value) & Q(any_strength__lt=max_strength_value))
+        )
+        print(f"Strength stats: {strength_stats}")
+        
+        # Filter to include only mixes within the specific strength class range
+        mixes_in_strength_class = mixes_with_class.filter(
+            # Keep only mixes where at least one strength value is within the class range
+            (
+                Q(strength_28d__isnull=False) & 
+                Q(strength_28d__gte=min_strength_value) & 
+                Q(strength_28d__lt=max_strength_value)
+            ) | (
+                Q(any_strength__isnull=False) & 
+                Q(any_strength__gte=min_strength_value) & 
+                Q(any_strength__lt=max_strength_value)
+            )
+        ).distinct()
+        print(f"Mixes with strength in range {min_strength_value} to {max_strength_value} MPa: {mixes_in_strength_class.count()} mixes")
+        
+        # Use the filtered mixes
+        mixes = mixes_in_strength_class
+        print(f"Final filtered mixes count: {mixes.count()} mixes")
+        filters_applied = True
     
     # Filter by maximum water/binder ratio
     max_wb = request.GET.get('max_wb')
-    if max_wb and max_wb.replace('.', '', 1).isdigit():
-        mixes = mixes.filter(w_b_ratio__lte=max_wb)
-        filters_applied = True
+    if max_wb:
+        try:
+            max_wb_value = float(max_wb)
+            print(f"Applying max W/B ratio filter: {max_wb_value}")
+            filter_debug["max_wb"] = max_wb_value
+            
+            # First filter mixes with w_b_ratio that's less than max_wb_value
+            # Include mixes where w_b_ratio is None but w_c_ratio is available and less than max_wb_value
+            # Since cement is a binder, w_c_ratio is always >= w_b_ratio, so we can use it as a safe upper bound
+            from django.db.models import Q
+            print(f"Before W/B filter, mixes count: {mixes.count()}")
+            mixes = mixes.filter(
+                Q(w_b_ratio__lte=max_wb_value) | 
+                Q(w_b_ratio__isnull=True, w_c_ratio__lte=max_wb_value)
+            )
+            print(f"After W/B filter, mixes count: {mixes.count()}")
+            filters_applied = True
+        except ValueError:
+            # If the value is not a valid float, ignore this filter
+            print(f"Error parsing max W/B ratio value: {max_wb}")
     
     # Check for sorting parameter
     sort_param = request.GET.get('sort', 'mix_id')  # Default to ID sorting
+    print(f"Sorting by: {sort_param}")
+    filter_debug["sort"] = sort_param
     
     # If natural sorting is requested for mix_code
     if sort_param == 'mix_code_natural':
@@ -384,8 +540,12 @@ def mix_list_view(request):
     except (ValueError, TypeError):
         page_size = 25  # Default if invalid
     
+    print(f"Pagination: page_size={page_size}")
+    
     paginator = Paginator(ordered_qs, page_size)
     page_number = request.GET.get('page')
+    print(f"Requested page number: {page_number}")
+    filter_debug["page"] = page_number
     
     try:
         page_obj = paginator.page(page_number)
@@ -394,11 +554,53 @@ def mix_list_view(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
     
+    # Add all available datasets for filter dropdown
+    all_datasets = Dataset.objects.values_list('dataset_name', flat=True).distinct().order_by('dataset_name')
+    
+    # Join the datasets into a comma-separated string for JavaScript
+    datasets_string = ','.join(all_datasets)
+    
+    # Create a query string that excludes the page parameter for pagination links
+    query_dict = request.GET.copy()
+    if 'page' in query_dict:
+        query_dict.pop('page')
+    query_params = query_dict.urlencode()
+    
+    # Add filter parameters directly to the context for easy access in templates
+    active_filters = {}
+    if dataset_filter:
+        active_filters['dataset'] = dataset_filter
+    if region_filter:
+        active_filters['region'] = region_filter
+    if min_strength:
+        active_filters['min_strength'] = min_strength
+    if strength_class:
+        active_filters['strength_class'] = strength_class
+    if max_wb:
+        active_filters['max_wb'] = max_wb
+    
+    # Log the active filters
+    print(f"Active filters being passed to template: {active_filters}")
+        
     context = {
         'page_obj': page_obj,
         'current_ordering': sort_param,
+        'all_datasets': all_datasets,
+        'datasets_string': datasets_string,
+        'query_params': query_params,  # Pass query parameters for pagination links
+        'active_filters': active_filters,  # Add active filters to context
         'app_name': 'cdb_app',
     }
+    
+    # Final debug summary
+    print("\n========== FILTER DEBUG SUMMARY ==========")
+    print(f"Original query string: {filter_debug['original_query_string']}")
+    print(f"Final filter states: {filter_debug}")
+    print(f"Final query_params: {query_params}")
+    print(f"Total mixes after filtering: {ordered_qs.count()}")
+    print(f"Paginator: {paginator.count} mixes, {paginator.num_pages} pages")
+    print(f"Current page: {page_obj.number}")
+    print("=========================================\n")
     
     return render(request, 'cdb_app/mix_list.html', context)
 
@@ -409,9 +611,8 @@ def add_mix(request):
     if request.method == 'POST':
         form = ConcreteMixForm(request.POST)
         if form.is_valid():
-            mix = form.save(commit=False)
-            # Save the mix
-            mix.save()
+            # The custom save method in the form will handle dataset creation/lookup
+            mix = form.save()
             messages.success(request, f'Mix {mix.mix_code} created successfully!')
             return redirect('cdb_app:mix_detail', pk=mix.mix_id)
         else:
@@ -891,8 +1092,8 @@ def dataset_detail(request, pk):
     """Display details of a specific dataset."""
     dataset = get_object_or_404(Dataset.objects, pk=pk)
     
-    # Get mixes in this dataset with pagination
-    mixes = ConcreteMix.objects.filter(dataset=dataset).order_by('mix_code')
+    # Get mixes in this dataset
+    mixes = ConcreteMix.objects.filter(dataset=dataset).select_related('dataset')
     
     # Get statistics
     total_mixes = mixes.count()
@@ -902,23 +1103,56 @@ def dataset_detail(request, pk):
     # Get average compressive strength if available
     strength_results = PerformanceResult.objects.filter(
         mix__dataset=dataset, 
-        category__icontains='strength'
+        property__property_name__icontains='compressive'  # Use property_name field from PropertyDictionary
     )
     strength_avg = strength_results.aggregate(avg_strength=Avg('value_num'))['avg_strength']
+    
+    # Annotate each mix with its compressive strength result similar to mix_list_view
+    from django.db.models import OuterRef, Subquery, F, Value, CharField
+    
+    # First try to get 28-day results
+    strength_28d_subquery = PerformanceResult.objects.filter(
+        mix=OuterRef('pk'),
+        age_days=28,
+        property__property_name__icontains='compressive'  # Use property_name field from PropertyDictionary
+    ).values('value_num', 'age_days')[:1]
+    
+    # If no 28-day results, get any compressive strength result
+    any_strength_subquery = PerformanceResult.objects.filter(
+        mix=OuterRef('pk'),
+        property__property_name__icontains='compressive'  # Use property_name field from PropertyDictionary
+    ).order_by('age_days').values('value_num', 'age_days')[:1]
+    
+    mixes = mixes.annotate(
+        strength_28d=Subquery(strength_28d_subquery.values('value_num')),
+        test_age=Subquery(strength_28d_subquery.values('age_days')),
+        any_strength=Subquery(any_strength_subquery.values('value_num')),
+        any_age=Subquery(any_strength_subquery.values('age_days'))
+    )
+    
+    # Order the mixes by mix_code for consistent display
+    mixes = mixes.order_by('mix_code')
     
     # Pagination for mixes
     paginator = Paginator(mixes, 10)  # 10 mixes per page
     page_number = request.GET.get('page')
     try:
-        mixes = paginator.page(page_number)
+        page_obj = paginator.page(page_number)
     except PageNotAnInteger:
-        mixes = paginator.page(1)
+        page_obj = paginator.page(1)
     except EmptyPage:
-        mixes = paginator.page(paginator.num_pages)
+        page_obj = paginator.page(paginator.num_pages)
+    
+    # Create a query string that excludes the page parameter for pagination links
+    query_dict = request.GET.copy()
+    if 'page' in query_dict:
+        query_dict.pop('page')
+    query_params = query_dict.urlencode()
     
     context = {
         'dataset': dataset,
-        'mixes': mixes,
+        'page_obj': page_obj,
+        'query_params': query_params,  # Pass query parameters for pagination
         'total_mixes': total_mixes,
         'total_materials': total_materials,
         'total_results': total_results,
