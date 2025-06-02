@@ -23,6 +23,7 @@ from datetime import datetime
 from django.db import transaction
 
 # Set up Django environment
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'concrete_mix_project.settings')
 django.setup()
 
