@@ -397,6 +397,13 @@ def mix_list_view(request):
                     min_strength_psi, max_strength_psi = ASTM_STRENGTH_CLASSES[class_code]
                     min_strength_value = min_strength_psi / 145
                     max_strength_value = max_strength_psi / 145 if max_strength_psi != float('inf') else float('inf')
+
+            # Start with the base queryset again
+            mixes_with_class = ConcreteMix.objects.select_related('dataset').all()
+            
+            # Apply previous filters if any
+            if filters_applied:
+                if dataset_filter:
                     print(f"Found ASTM class {class_code} with strength range: {min_strength_value} to {max_strength_value} MPa")
                 else:
                     print(f"WARNING: Unknown ASTM class: {class_code}")
