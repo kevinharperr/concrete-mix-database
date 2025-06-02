@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-development-key-change-in-production')
+SECRET_KEY = 'django-insecure-pfjags-q1p*u+x1p=)t%t7rd7j933e6g+t*72a#-(c@om_nq0m'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -105,9 +104,9 @@ WSGI_APPLICATION = 'concrete_mix_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'concrete_mix_db',
+        'NAME': 'cdb',
         'USER': 'postgres',
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'your_password_here'),
+        'PASSWORD': '264537',
         'HOST': 'localhost',
         'PORT': '5432',
         'OPTIONS': {
