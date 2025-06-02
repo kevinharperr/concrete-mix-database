@@ -20,7 +20,7 @@ def recreate_staging_database():
     print(f"\nResetting staging database at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Set PostgreSQL environment variables
-    os.environ["PGPASSWORD"] = "264537"
+    os.environ["PGPASSWORD"] = os.environ.get('DB_PASSWORD', 'your_password_here')
     
     # Terminate existing connections
     print("Terminating existing connections...")
