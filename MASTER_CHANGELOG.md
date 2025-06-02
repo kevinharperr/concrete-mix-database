@@ -1,5 +1,91 @@
 # Concrete Mix Database - Master Changelog
 
+## Last Updated: 28.05.2025, 17:05
+
+## DS2 Sequence Reset and Re-import Success (28.05.2025, 17:05)
+
+### Problem Identified and Resolved
+
+- **ID Sequence Gap Issue**: DS1 ended at mix_id 1030, but DS2 started at mix_id 3967, creating a gap of 2,936 IDs due to multiple import/delete cycles during development
+- **PostgreSQL Sequence Misalignment**: Database sequences were out of sync with actual data, causing non-sequential ID assignment
+- **Data Integrity Concerns**: Large ID gaps made data relationships harder to trace and wasted primary key space
+
+### Technical Resolution
+
+- **Sequence Discovery**: Identified actual PostgreSQL sequence names (e.g., `concrete_mix_mix_id_seq`) vs Django's expected names (`cdb_app_concretemix_mix_id_seq`)
+- **Systematic Reset Process**: 
+  1. Captured DS1 maximum IDs: mix_id=1030, component_id=5799, result_id=1030, specimen_id=0
+  2. Completely purged DS2 data (734 mixes and 4,746 related records)
+  3. Reset sequences to continue from DS1 endpoints using `setval()` commands
+  4. Re-imported DS2 with corrected sequential assignment
+
+### Perfect Results Achieved
+
+- **✅ Perfect Sequential Order**: DS1 (1-1030) → DS2 (1031-1764) with **zero gaps**
+- **✅ Complete Data Import**: 734/734 DS2 mixes imported successfully (100% success rate)
+- **✅ Full Component Coverage**: 2,544 components created with proper cementitious classification
+- **✅ All Performance Results**: 734 performance results imported (100% success rate)
+- **✅ Sequence Alignment**: All PostgreSQL sequences correctly positioned for DS3-DS6 imports
+
+### Database Final State
+
+- **Total concrete mixes**: 1,764 (1,030 DS1 + 734 DS2)
+- **Total components**: 8,343 with proper material classification
+- **Total materials**: 11 (no duplicates created)
+- **Total performance results**: 1,764 with complete specimen data
+- **ID ranges**: DS1 (1-1030), DS2 (1031-1764) - perfectly sequential
+
+### Technical Artifacts Created
+
+- **Sequence Management Scripts**: Developed comprehensive sequence discovery and reset methodology
+- **Import Verification**: Created verification frameworks for sequential ID assignment
+- **PostgreSQL Commands**: Documented critical sequence management SQL commands for future use
+
+### Lessons for DS3-DS6 Imports
+
+- **Always verify sequence alignment** before starting new dataset imports
+- **Reset sequences between datasets** to maintain perfect sequential ordering
+- **Use actual sequence names** discovered via `information_schema.sequences` queries
+- **Comprehensive verification** of ID ranges after each import
+- **Clean import approach** with complete data purging before sequence reset
+
+This resolution ensures the database is perfectly positioned for DS3-DS6 imports with predictable, sequential ID assignment across all datasets.
+
+## Last Updated: 28.05.2025, 14:30
+
+## Universal Dataset Import System Failure and Removal (28.05.2025, 14:30)
+
+### Critical Issues Identified
+
+- **Performance Results Import Failure**: Universal import system failed to import performance results for 59% of DS2 mixes (1,600 out of 2,712 mixes)
+- **Material Duplication**: Automated material creation resulted in duplicate materials, creating data integrity issues
+- **Field Mapping Errors**: Multiple field name mismatches between configuration and actual database models
+- **Configuration Complexity**: JSON-based configuration system proved too complex and error-prone for reliable dataset imports
+- **Validation Failures**: High validation failure rates due to overly strict rules inappropriate for research datasets
+
+### Resolution Actions
+
+- **Complete DS2 Data Purge**: Removed all DS2 mixes (2,712), components (12,178), and performance results (1,432)
+- **Database Cleanup**: Removed 5 duplicate materials created during failed DS2 import
+- **Sequence Reset**: Reset database sequences to continue properly from DS1 baseline (mix IDs start from 1031, material IDs from 8)
+- **System Removal**: Deleted entire universal import system including all configuration files and documentation
+
+### Technical Impact
+
+- **Database State**: Restored to clean DS1-only baseline (1,030 mixes, 5,799 components, 1,030 results, 7 materials)
+- **Import Approach**: Reverted to simpler, dataset-specific import methodology
+- **Development Time**: Approximately 8 hours invested in universal system development ultimately discarded
+- **Lessons Learned**: Configuration-driven approaches require extensive testing before production use
+
+### Files Removed
+
+- `etl/universal_dataset_importer.py` (541 lines)
+- `etl/dataset_config_manager.py` (274 lines) 
+- `etl/config_generator.py` (364 lines)
+- `etl/README_DATASET_IMPORT_SYSTEM.md` (347 lines)
+- All configuration files in `etl/configs/` directory
+- All DS2-specific documentation and mapping files
+
 ## Last Updated: 28.05.2025, 12:00
 
 ## Django Template Syntax Error Resolution Complete (28.05.2025, 12:00)
