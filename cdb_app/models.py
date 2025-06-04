@@ -158,13 +158,13 @@ class Material(models.Model):
         db_column="class_code",
         on_delete=models.RESTRICT, # Prevent deleting a class if materials use it
         related_name="materials",
-        help_text="High-level material classification"
+        help_text="High-level material classification",
+        null=True, blank=True  # Temporarily nullable for migration
     )
     subtype_code = models.CharField(max_length=60, blank=True, null=True, db_index=True, help_text="Specific type within class, e.g., CEM I, Fly Ash Class F, ground_granulated_blast_furnace_slag")
     # Renamed brand_name to specific_name for broader use
     specific_name = models.TextField(blank=True, null=True, help_text="Most specific name from source, e.g., CEM I 52.5 R, OPC-32.5, Tap Water")
     manufacturer = models.TextField(blank=True, null=True)
-    density_kg_m3 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Material density in kg/m³")
     standard = models.ForeignKey(Standard, db_column="standard_ref", blank=True, null=True, on_delete=models.SET_NULL, related_name="materials") # Link to Standard table
     country_of_origin = models.CharField(max_length=60, blank=True, null=True)
     date_added = models.DateField(null=True, blank=True, auto_now_add=True) # Use auto_now_add?
@@ -184,7 +184,7 @@ class Material(models.Model):
 class ConcreteMix(models.Model):
     """Represents a single concrete mix design."""
     mix_id = models.AutoField(primary_key=True)
-    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name="concrete_mixes") # Should not be nullable
+    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, related_name="concrete_mixes", null=True, blank=True) # Temporarily nullable for migration
     mix_code = models.CharField(max_length=50, blank=True, null=True, db_index=True)
     date_created = models.DateField(blank=True, null=True)
     region_country = models.CharField(max_length=60, blank=True, null=True)
@@ -359,6 +359,10 @@ class CementDetail(models.Model):
     material = models.OneToOneField(Material, on_delete=models.CASCADE, primary_key=True, related_name="cement_detail")
     strength_class = models.CharField(max_length=10, blank=True, null=True)
     clinker_pct = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    # Enhanced cement properties
+    specific_gravity_od = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, help_text="Oven-Dry Specific Gravity of cement particles")
+    bulk_density_kg_m3 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Bulk density of cement powder")
+    blaine_fineness_m2_kg = models.DecimalField(max_digits=8, decimal_places=1, null=True, blank=True, help_text="Blaine fineness in m²/kg")
 
     class Meta:
         db_table = "cement_detail"
@@ -373,6 +377,9 @@ class ScmDetail(models.Model):
     material = models.OneToOneField(Material, on_delete=models.CASCADE, primary_key=True, related_name="scm_detail")
     scm_type_code = models.CharField(max_length=20, blank=True, null=True, help_text="e.g., F, N, SF, G") # From standards like ASTM C618, EN 450 etc.
     loi_pct = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    # Enhanced SCM properties
+    specific_gravity_od = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, help_text="Oven-Dry Specific Gravity of SCM particles")
+    bulk_density_kg_m3 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Bulk density of SCM powder")
 
     class Meta:
         db_table = "scm_detail"
@@ -390,6 +397,9 @@ class AggregateDetail(models.Model):
     bulk_density_kg_m3 = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     water_absorption_pct = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     fineness_modulus = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    # Enhanced aggregate properties
+    specific_gravity_od = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, help_text="Oven-Dry Specific Gravity of aggregate particles")
+    specific_gravity_ssd = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, help_text="Saturated Surface-Dry Specific Gravity of aggregate particles")
 
     class Meta:
         db_table = "aggregate_detail"

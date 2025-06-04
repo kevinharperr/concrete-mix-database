@@ -130,13 +130,13 @@ class DatasetImporter:
                 if created:
                     self.logger.info(f"Created UnitLookup: {unit_symbol}")
         
-        # TestMethod objects
+        # TestMethod objects - UPDATED to use standardized test methods
         for perf_spec in self.config['performance_results']:
-            test_method_desc = perf_spec['test_method_description']
+            test_method_desc = self._get_standardized_test_method_description(perf_spec)
             if test_method_desc not in self.test_method_cache:
                 test_method, created = self._get_django_object(
                     TestMethod,
-                    defaults={'clause': None},
+                    defaults={'clause': 'Various standards'},
                     description=test_method_desc
                 )
                 self.test_method_cache[test_method_desc] = test_method
@@ -151,7 +151,8 @@ class DatasetImporter:
             'AGGR_C': 'Coarse Aggregate',
             'AGGR_F': 'Fine Aggregate',
             'SCM': 'Supplementary Cementitious Material',
-            'ADM': 'Admixture'
+            'ADM': 'Admixture',
+            'MIN_ADD': 'Mineral Addition'
         }
         return class_names.get(class_code, class_code)
     
@@ -164,6 +165,33 @@ class DatasetImporter:
             'flexural_strength': 'Flexural Strength'
         }
         return property_names.get(property_pk, property_pk.replace('_', ' ').title())
+    
+    def _get_standardized_test_method_description(self, perf_spec: Dict) -> str:
+        """
+        Get standardized test method description to prevent fragmentation.
+        
+        For compressive strength, always use 'Compressive Strength Test' regardless
+        of what the configuration specifies. Specimen details are stored separately.
+        For slump flow, always use 'Slump Flow Test' for consistency.
+        For slump, always use 'Slump Test' for consistency.
+        """
+        property_pk = perf_spec['property_pk']
+        
+        # Standardize compressive strength test method name
+        if property_pk == 'compressive_strength':
+            return 'Compressive Strength Test'
+        
+        # Standardize slump flow test method name
+        if property_pk == 'slump_flow':
+            return 'Slump Flow Test'
+        
+        # Standardize slump test method name
+        if property_pk == 'slump':
+            return 'Slump Test'
+        
+        # For other properties, you could add more standardization here
+        # For now, use what's configured
+        return perf_spec.get('test_method_description', f'{property_pk.replace("_", " ").title()} Test')
     
     def _create_or_update_dataset_meta(self) -> Dataset:
         """Create or update the Dataset and BibliographicReference objects."""
@@ -480,13 +508,19 @@ class DatasetImporter:
                             value = field_config['prefix'] + value
                         mix_fields[field_name] = value
                 else:
-                    # Direct field mapping
+                    # Direct field mapping - handle both string and numeric fields
                     if csv_column in row_data and pd.notna(row_data[csv_column]):
-                        mix_fields[field_config] = self._safe_decimal(row_data[csv_column])
+                        value = row_data[csv_column]
+                        # Try to convert to decimal for numeric fields, otherwise keep as string
+                        decimal_value = self._safe_decimal(value)
+                        if decimal_value is not None:
+                            mix_fields[field_config] = decimal_value
+                        else:
+                            # Keep as string for non-numeric fields like region_country
+                            mix_fields[field_config] = str(value).strip()
             
-            # Handle w_b_ratio (same as w_c_ratio for DS2 since no SCMs)
-            if 'w_c_ratio' in mix_fields:
-                mix_fields['w_b_ratio'] = mix_fields['w_c_ratio']
+            # Calculate w_c_ratio and w_b_ratio from constituent columns
+            self._calculate_ratios(row_data, mix_fields)
             
             # Build notes from multiple columns
             notes_parts = []
@@ -494,7 +528,7 @@ class DatasetImporter:
             for note_spec in notes_config:
                 csv_col = note_spec['csv_column']
                 prefix = note_spec['prefix']
-                if csv_col in row_data and pd.notna(row_data[csv_col]):
+                if csv_col in row_data and pd.notna(row_data[csv_col]) and str(row_data[csv_col]).strip():
                     notes_parts.append(f"{prefix}{row_data[csv_col]}")
             
             if notes_parts:
@@ -508,6 +542,69 @@ class DatasetImporter:
         except Exception as e:
             self.logger.error(f"Error creating ConcreteMix: {e}")
             return None
+    
+    def _calculate_ratios(self, row_data: pd.Series, mix_fields: Dict) -> None:
+        """Calculate w_c_ratio and w_b_ratio from CSV columns."""
+        try:
+            # Find water column - look for common water column names
+            water_columns = ['eff_water (kg/m3)', 'eff_water (kg/m3)  ', 'Eff. W/C ratio', 'water_content']
+            water_value = None
+            
+            for col in water_columns:
+                if col in row_data and pd.notna(row_data[col]):
+                    if col == 'Eff. W/C ratio':
+                        # This is already a ratio, not water content - round to 2 decimal places
+                        mix_fields['w_c_ratio'] = round(float(self._safe_decimal(row_data[col])), 2)
+                        mix_fields['w_b_ratio'] = mix_fields['w_c_ratio']  # For DS2 compatibility
+                        return
+                    else:
+                        water_value = self._safe_decimal(row_data[col])
+                        break
+            
+            if not water_value or water_value <= 0:
+                self.logger.warning("No valid water content found for ratio calculation")
+                return
+            
+            # Find cement content
+            cement_columns = ['cement (kg/m3)', 'Cement Content kg/m^3']
+            cement_value = None
+            
+            for col in cement_columns:
+                if col in row_data and pd.notna(row_data[col]):
+                    cement_value = self._safe_decimal(row_data[col])
+                    break
+            
+            if not cement_value or cement_value <= 0:
+                self.logger.warning("No valid cement content found for ratio calculation")
+                return
+            
+            # Calculate w_c_ratio
+            mix_fields['w_c_ratio'] = round(water_value / cement_value, 2)
+            
+            # Calculate w_b_ratio (water to binder ratio including SCMs)
+            binder_total = cement_value
+            
+            # Add SCM contents to binder total
+            scm_columns = ['fly ash (kg/m3)', 'silica fume (kg/m3)', 'BFS (kg/m3)', 'BFS (kg/m3) ']
+            for col in scm_columns:
+                if col in row_data and pd.notna(row_data[col]):
+                    scm_value = self._safe_decimal(row_data[col])
+                    if scm_value and scm_value > 0:
+                        binder_total += scm_value
+            
+            # Calculate w_b_ratio
+            if binder_total > 0:
+                mix_fields['w_b_ratio'] = round(water_value / binder_total, 2)
+            else:
+                mix_fields['w_b_ratio'] = mix_fields['w_c_ratio']  # Fallback
+                
+            self.logger.debug(f"Calculated ratios - W/C: {mix_fields.get('w_c_ratio')}, W/B: {mix_fields.get('w_b_ratio')}")
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating ratios: {e}")
+            # Set w_b_ratio same as w_c_ratio if calculation fails
+            if 'w_c_ratio' in mix_fields:
+                mix_fields['w_b_ratio'] = mix_fields['w_c_ratio']
     
     def _create_mix_components(self, concrete_mix: ConcreteMix, row_data: pd.Series, dataset_obj: Dataset) -> int:
         """Create MixComponent objects for a concrete mix."""
@@ -567,12 +664,8 @@ class DatasetImporter:
                 continue
             
             try:
-                # Parse specimen information
-                specimen_column = perf_spec.get('specimen_csv_column')
-                specimen_data = {'shape': 'Unknown', 'nominal_diameter_mm': None, 'nominal_length_mm': None}
-                
-                if specimen_column and specimen_column in row_data:
-                    specimen_data = self._parse_specimen_string(row_data[specimen_column])
+                # Handle specimen information - either from CSV parsing or fixed details
+                specimen_data = self._get_specimen_data(perf_spec, row_data)
                 
                 # Create or get specimen
                 specimen_key = f"{concrete_mix.mix_id}_{specimen_data['shape']}_{specimen_data['nominal_diameter_mm']}_{specimen_data['nominal_length_mm']}"
@@ -588,25 +681,62 @@ class DatasetImporter:
                 else:
                     specimen = self.specimen_cache[specimen_key]
                 
+                # Get testing age - either from CSV column or fixed value
+                age_days = self._get_testing_age(perf_spec, row_data)
+                
                 # Create PerformanceResult
                 PerformanceResult.objects.create(
                     mix=concrete_mix,
                     property=self.property_cache[perf_spec['property_pk']],
                     value_num=value,
                     unit=self.unit_cache[perf_spec['unit_symbol']],
-                    age_days=perf_spec['fixed_age_days'],
+                    age_days=age_days,
                     test_method=self.test_method_cache[perf_spec['test_method_description']],
                     category=perf_spec['category'],
                     specimen=specimen
                 )
                 
                 results_created += 1
-                self.logger.debug(f"Created PerformanceResult: {perf_spec['property_pk']} = {value} {perf_spec['unit_symbol']}")
+                self.logger.debug(f"Created PerformanceResult: {perf_spec['property_pk']} = {value} {perf_spec['unit_symbol']} at {age_days} days")
                 
             except Exception as e:
                 self.logger.error(f"Error creating PerformanceResult: {e}")
         
         return results_created
+    
+    def _get_specimen_data(self, perf_spec: Dict, row_data: pd.Series) -> Dict[str, Any]:
+        """Get specimen data either from fixed details or by parsing CSV column."""
+        # Check if fixed specimen details are provided (for DS3)
+        if 'specimen_details' in perf_spec:
+            specimen_details = perf_spec['specimen_details']
+            return {
+                'shape': specimen_details['shape'],
+                'nominal_diameter_mm': specimen_details['nominal_diameter_mm'],
+                'nominal_length_mm': specimen_details['nominal_length_mm']
+            }
+        
+        # Otherwise, parse from CSV column (for DS2 style)
+        specimen_column = perf_spec.get('specimen_csv_column')
+        if specimen_column and specimen_column in row_data:
+            return self._parse_specimen_string(row_data[specimen_column])
+        
+        # Default fallback
+        return {'shape': 'Unknown', 'nominal_diameter_mm': None, 'nominal_length_mm': None}
+    
+    def _get_testing_age(self, perf_spec: Dict, row_data: pd.Series) -> Optional[int]:
+        """Get testing age either from CSV column or fixed value."""
+        # Check if age comes from CSV column (for DS3)
+        if 'csv_column_for_age' in perf_spec:
+            age_column = perf_spec['csv_column_for_age']
+            if age_column in row_data and pd.notna(row_data[age_column]):
+                try:
+                    return int(row_data[age_column])
+                except (ValueError, TypeError):
+                    self.logger.warning(f"Invalid age value in column {age_column}: {row_data[age_column]}")
+                    return None
+        
+        # Otherwise use fixed age (for DS2 style)
+        return perf_spec.get('fixed_age_days')
     
     def run_import(self) -> Dict[str, int]:
         """Run the complete import process."""
